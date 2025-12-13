@@ -1,6 +1,6 @@
 # Advanced Learning Paradigms: Complete Guide
 **Topics 2.3, 2.4, and 2.5: Semi-Supervised, Self-Supervised, and Other Learning Paradigms**  
-*Comprehensive guide covering all topics from flipped class, class notes, and slides*
+*Comprehensive guide with detailed mathematical derivations and step-by-step explanations*
 
 ---
 
@@ -31,11 +31,6 @@
 
 **Key Insight**: Unlabeled data contains valuable information about the data distribution that can guide learning!
 
-**Real-World Analogy**:
-- Learning a language: You have a few labeled examples (dictionary with translations) and many unlabeled examples (conversations, books)
-- You can learn patterns from unlabeled data (grammar, word usage) and use labeled examples to anchor meanings
-- Together, you learn better than with labels alone
-
 ### 1.2 Core Concepts
 
 #### **The Data Landscape**
@@ -50,168 +45,333 @@
 - Cheap and abundant
 - Contains distributional information
 
-**Key Assumption**: 
-- Data points that are close in feature space should have similar labels
-- Unlabeled data helps identify the structure of the feature space
+### 1.3 Mathematical Foundation: Combined Loss Function
 
-#### **Why It Works**
+#### **Step 1: Define Supervised Loss**
 
-**Smoothness Assumption**:
-- Points close to each other are likely to have the same label
-- Unlabeled data helps define "closeness" in the feature space
+For labeled data, we use standard supervised loss:
 
-**Cluster Assumption**:
-- Data tends to form clusters
-- Points in the same cluster should have the same label
-- Unlabeled data reveals cluster structure
-
-**Manifold Assumption**:
-- High-dimensional data lies on a lower-dimensional manifold
-- Unlabeled data helps learn this manifold structure
-
-### 1.3 How Semi-Supervised Learning Works
-
-#### **Step-by-Step Process**
-
-1. **Initial Training**:
-   - Train model on small labeled dataset L
-   - Get initial predictions
-
-2. **Pseudo-Labeling**:
-   - Use trained model to predict labels for unlabeled data U
-   - Select high-confidence predictions
-   - Treat these as "pseudo-labels"
-
-3. **Iterative Refinement**:
-   - Retrain model on L + pseudo-labeled subset of U
-   - Update predictions on remaining unlabeled data
-   - Repeat until convergence
-
-4. **Final Prediction**:
-   - Use refined model for new predictions
-
-### 1.4 Key Methods
-
-#### **1. Self-Training**
-
-**Process**:
-1. Train classifier on labeled data L
-2. Predict labels for unlabeled data U
-3. Select high-confidence predictions
-4. Add pseudo-labeled examples to training set
-5. Retrain and repeat
-
-**Characteristics**:
-- Simple and intuitive
-- Works with any base classifier
-- Risk: Errors can propagate (if model makes mistakes, it reinforces them)
-
-**Example**:
 ```
-Initial: 100 labeled emails (spam/not spam)
-Unlabeled: 10,000 emails
-
-Step 1: Train on 100 labeled → accuracy 85%
-Step 2: Predict on 10,000 unlabeled
-Step 3: Select top 1,000 high-confidence predictions
-Step 4: Retrain on 100 labeled + 1,000 pseudo-labeled
-Step 5: Repeat with remaining 9,000 unlabeled
+L_supervised = (1/|L|) × Σ_{(x,y) ∈ L} l(f(x), y)
 ```
 
-#### **2. Co-Training**
+**Explanation**:
+- **|L|**: Number of labeled examples
+- **l(f(x), y)**: Loss function (e.g., cross-entropy for classification, MSE for regression)
+- **f(x)**: Model prediction
+- **y**: True label
+- We average the loss over all labeled examples
 
-**Core Idea**: Train two models on different views/features of the data, and they teach each other.
+**For Classification (Cross-Entropy)**:
+```
+l(f(x), y) = -Σᵢ yᵢ × log(f(x)ᵢ)
+```
 
-**Process**:
-1. Split features into two independent sets (View 1 and View 2)
-2. Train Model 1 on View 1 of labeled data
-3. Train Model 2 on View 2 of labeled data
-4. Each model predicts on unlabeled data
-5. High-confidence predictions from Model 1 become labels for Model 2 (and vice versa)
-6. Retrain both models iteratively
+**For Regression (MSE)**:
+```
+l(f(x), y) = (f(x) - y)²
+```
 
-**Requirements**:
-- Features can be split into two independent sets
-- Each view is sufficient for learning
-- Views are conditionally independent given the class
+#### **Step 2: Define Unsupervised Loss**
 
-**Example**:
-- **View 1**: Text content of web pages
-- **View 2**: Hyperlinks pointing to web pages
-- Model 1 learns from text, Model 2 learns from links
-- They label unlabeled pages for each other
+For unlabeled data, we need a loss that doesn't require labels. Common approach: **consistency regularization**.
+
+**Consistency Regularization Principle**:
+- Model should make consistent predictions for similar inputs
+- If we perturb input slightly, prediction should remain similar
 
 **Mathematical Formulation**:
 ```
-Given: L = {(x₁, y₁), ..., (xₗ, yₗ)}, U = {xₗ₊₁, ..., xₗ₊ᵤ}
-Features: X = [X₁, X₂] where X₁ and X₂ are independent views
-
-Train f₁ on (X₁, Y) from L
-Train f₂ on (X₂, Y) from L
-
-For each iteration:
-  - f₁ predicts on U → high-confidence predictions → add to L₂
-  - f₂ predicts on U → high-confidence predictions → add to L₁
-  - Retrain f₁ on L ∪ L₁
-  - Retrain f₂ on L ∪ L₂
+L_unsupervised = (1/|U|) × Σ_{x ∈ U} D(f(x), f(x'))
 ```
 
-#### **3. Majority Voting**
+**Explanation**:
+- **|U|**: Number of unlabeled examples
+- **x'**: Augmented or perturbed version of x
+- **D(·, ·)**: Distance metric between predictions
+- **f(x)**: Prediction on original input
+- **f(x')**: Prediction on perturbed input
+- We want these predictions to be similar
 
-**When Predictions Differ**:
-- Multiple models make predictions on same data
-- Use majority vote to decide final label
-- Reduces individual model errors
+#### **Step 3: Distance Metric D**
 
-**Process**:
-1. Train multiple models (different algorithms or different views)
-2. Each model predicts on unlabeled data
-3. For each data point, collect all predictions
-4. Assign label based on majority vote
-5. Use agreed-upon labels for training
-
-**Example**:
+**Option 1: Mean Squared Error (MSE)**:
 ```
-3 models predict on unlabeled email:
-- Model 1: Spam (confidence: 0.9)
-- Model 2: Spam (confidence: 0.7)
-- Model 3: Not Spam (confidence: 0.6)
-
-Majority vote: Spam (2 out of 3)
-Use this as pseudo-label
+D(f(x), f(x')) = ||f(x) - f(x')||²
 ```
 
-### 1.5 Mathematical Foundation
+**Step-by-step**:
+1. **f(x)**: Vector of predictions for original input x
+2. **f(x')**: Vector of predictions for perturbed input x'
+3. **f(x) - f(x')**: Element-wise difference
+4. **||·||²**: Squared L2 norm (sum of squared differences)
+5. **Result**: Measures how different the predictions are
 
-#### **Objective Function**
+**For classification with probabilities**:
+```
+D(f(x), f(x')) = Σᵢ (P(yᵢ|x) - P(yᵢ|x'))²
+```
 
-**Combined Loss**:
+**Option 2: KL Divergence**:
+```
+D(f(x), f(x')) = KL(P(y|x) || P(y|x'))
+                = Σᵢ P(yᵢ|x) × log(P(yᵢ|x) / P(yᵢ|x'))
+```
+
+**Step-by-step derivation**:
+1. **P(y|x)**: Probability distribution over classes for input x
+2. **P(y|x')**: Probability distribution for perturbed input x'
+3. **KL divergence formula**: Measures difference between two probability distributions
+4. **P(yᵢ|x) × log(P(yᵢ|x) / P(yᵢ|x'))**: For each class i, compute this term
+5. **Σᵢ**: Sum over all classes
+6. **Result**: Measures how different the probability distributions are
+
+**Why KL Divergence?**:
+- Asymmetric measure (not symmetric like MSE)
+- Penalizes when P(y|x) is high but P(y|x') is low
+- Natural for probability distributions
+
+#### **Step 4: Combine Both Losses**
+
+**Combined Objective**:
 ```
 L_total = L_supervised + λ × L_unsupervised
 ```
 
-Where:
-- **L_supervised**: Loss on labeled data (e.g., cross-entropy)
-- **L_unsupervised**: Loss on unlabeled data (e.g., consistency loss)
-- **λ**: Weight balancing the two terms
+**Step-by-step explanation**:
+1. **L_supervised**: Ensures model fits labeled data correctly
+2. **L_unsupervised**: Ensures model makes consistent predictions on unlabeled data
+3. **λ**: Regularization parameter (weight for unsupervised term)
+4. **λ > 0**: Controls trade-off between fitting labeled data and consistency
 
-#### **Consistency Regularization**
-
-**Idea**: Model should make consistent predictions for similar inputs.
-
-**Formulation**:
+**Expanded Form**:
 ```
-L_unsupervised = Σ D(f(x), f(x'))
+L_total = (1/|L|) × Σ_{(x,y) ∈ L} l(f(x), y) + λ × (1/|U|) × Σ_{x ∈ U} D(f(x), f(x'))
 ```
 
-Where:
-- **x'**: Augmented or perturbed version of x
-- **D**: Distance metric (e.g., KL divergence, MSE)
-- **f**: Model predictions
+**Why This Works**:
+- **First term**: Minimizes error on labeled examples (supervised signal)
+- **Second term**: Encourages smooth predictions on unlabeled examples (unsupervised signal)
+- **Together**: Model learns from both labeled and unlabeled data
 
-**Example**: 
-- Add noise to image → predictions should be similar
-- Apply data augmentation → predictions should be consistent
+#### **Step 5: Optimization**
+
+**Goal**: Find model parameters θ that minimize L_total
+
+```
+θ* = argmin_θ L_total(θ)
+```
+
+**Gradient Descent Update**:
+```
+θ^(t+1) = θ^(t) - η × ∇_θ L_total(θ^(t))
+```
+
+**Step-by-step gradient calculation**:
+
+**Gradient of supervised term**:
+```
+∇_θ L_supervised = (1/|L|) × Σ_{(x,y) ∈ L} ∇_θ l(f(x; θ), y)
+```
+
+**Explanation**:
+1. **l(f(x; θ), y)**: Loss depends on parameters θ through f(x; θ)
+2. **∇_θ l(·)**: Gradient with respect to parameters
+3. **Chain rule**: ∇_θ l = (∂l/∂f) × (∂f/∂θ)
+4. **Average**: Sum over all labeled examples and divide by |L|
+
+**Gradient of unsupervised term**:
+```
+∇_θ L_unsupervised = (1/|U|) × Σ_{x ∈ U} ∇_θ D(f(x; θ), f(x'; θ))
+```
+
+**Step-by-step**:
+1. **D(f(x; θ), f(x'; θ))**: Distance depends on θ through both f(x) and f(x')
+2. **∇_θ D**: Gradient with respect to θ
+3. **Chain rule**: ∇_θ D = (∂D/∂f(x)) × (∂f(x)/∂θ) + (∂D/∂f(x')) × (∂f(x')/∂θ)
+4. **Average**: Sum over all unlabeled examples and divide by |U|
+
+**Complete gradient**:
+```
+∇_θ L_total = ∇_θ L_supervised + λ × ∇_θ L_unsupervised
+```
+
+**Final update rule**:
+```
+θ^(t+1) = θ^(t) - η × [∇_θ L_supervised + λ × ∇_θ L_unsupervised]
+```
+
+### 1.4 Co-Training Mathematical Formulation
+
+#### **Step 1: Problem Setup**
+
+**Given**:
+- Labeled data: L = {(x₁, y₁), ..., (xₗ, yₗ)}
+- Unlabeled data: U = {xₗ₊₁, ..., xₗ₊ᵤ}
+- Two views: X = [X₁, X₂] where X₁ and X₂ are conditionally independent given Y
+
+**Assumption**: 
+```
+P(X₁, X₂ | Y) = P(X₁ | Y) × P(X₂ | Y)
+```
+
+**Explanation**:
+- Given the class Y, views X₁ and X₂ are independent
+- This means: Knowing X₁ doesn't help predict X₂ if we already know Y
+- Example: Text content and hyperlinks of web pages (independent given the topic)
+
+#### **Step 2: Train Initial Models**
+
+**Model 1 (View 1)**:
+```
+f₁* = argmin_{f₁} (1/|L|) × Σ_{(x,y) ∈ L} l(f₁(x₁), y)
+```
+
+**Step-by-step**:
+1. **f₁**: Model that takes View 1 (X₁) as input
+2. **x₁**: View 1 features of example x
+3. **l(f₁(x₁), y)**: Loss on labeled data using only View 1
+4. **argmin**: Find model parameters that minimize this loss
+5. **Result**: Model trained only on View 1 of labeled data
+
+**Model 2 (View 2)**:
+```
+f₂* = argmin_{f₂} (1/|L|) × Σ_{(x,y) ∈ L} l(f₂(x₂), y)
+```
+
+**Similar explanation for View 2**
+
+#### **Step 3: Predict on Unlabeled Data**
+
+**Model 1 predictions**:
+```
+For each x ∈ U:
+  ŷ₁ = f₁*(x₁)
+  confidence₁ = max_i P(yᵢ | x₁)
+```
+
+**Explanation**:
+1. **f₁*(x₁)**: Model 1's prediction using View 1
+2. **P(yᵢ | x₁)**: Probability of class i given View 1
+3. **max_i**: Maximum probability (confidence in prediction)
+4. **High confidence**: Model is sure about prediction
+
+**Model 2 predictions**:
+```
+For each x ∈ U:
+  ŷ₂ = f₂*(x₂)
+  confidence₂ = max_i P(yᵢ | x₂)
+```
+
+#### **Step 4: Select High-Confidence Predictions**
+
+**For Model 1**:
+```
+L₁ = {(x, ŷ₁) | x ∈ U, confidence₁ > threshold, ŷ₁ = argmax_i P(yᵢ | x₁)}
+```
+
+**Step-by-step**:
+1. **Filter unlabeled examples**: Keep only those with confidence > threshold
+2. **Get prediction**: ŷ₁ = most likely class according to Model 1
+3. **Create pseudo-labeled set**: L₁ contains (x, ŷ₁) pairs
+4. **These become labels for Model 2**
+
+**For Model 2**:
+```
+L₂ = {(x, ŷ₂) | x ∈ U, confidence₂ > threshold, ŷ₂ = argmax_i P(yᵢ | x₂)}
+```
+
+#### **Step 5: Retrain Models**
+
+**Update Model 1**:
+```
+f₁^(t+1) = argmin_{f₁} (1/|L ∪ L₂|) × Σ_{(x,y) ∈ L ∪ L₂} l(f₁(x₁), y)
+```
+
+**Step-by-step**:
+1. **L ∪ L₂**: Combine original labeled data L with pseudo-labels from Model 2
+2. **Train on combined set**: Model 1 now sees more training examples
+3. **y comes from**: Original labels in L, pseudo-labels in L₂
+4. **Result**: Model 1 improves by learning from Model 2's high-confidence predictions
+
+**Update Model 2**:
+```
+f₂^(t+1) = argmin_{f₂} (1/|L ∪ L₁|) × Σ_{(x,y) ∈ L ∪ L₁} l(f₂(x₂), y)
+```
+
+**Similar process for Model 2**
+
+#### **Step 6: Iterate**
+
+**Repeat Steps 3-5 until convergence**:
+- Models keep teaching each other
+- Training set grows with each iteration
+- Stop when no new high-confidence predictions or max iterations reached
+
+**Convergence criterion**:
+```
+|L₁^(t+1) ∪ L₂^(t+1)| - |L₁^(t) ∪ L₂^(t)| < ε
+```
+
+**Explanation**:
+- **|L₁^(t) ∪ L₂^(t)|**: Total pseudo-labeled examples at iteration t
+- **|L₁^(t+1) ∪ L₂^(t+1)|**: Total at iteration t+1
+- **Difference**: How many new examples were added
+- **ε**: Small threshold (e.g., 0.01)
+- **Convergence**: When very few new examples are added
+
+### 1.5 Information Gain in Semi-Supervised Context
+
+#### **Step 1: Entropy of Labeled Data**
+
+**Initial entropy**:
+```
+H(Y | L) = -Σᵢ P(yᵢ | L) × log₂(P(yᵢ | L))
+```
+
+**Step-by-step derivation**:
+1. **P(yᵢ | L)**: Proportion of class i in labeled set L
+   - P(yᵢ | L) = (number of examples with class i) / |L|
+2. **log₂(P(yᵢ | L))**: Logarithm (base 2) of probability
+   - Measures information content
+3. **P(yᵢ | L) × log₂(P(yᵢ | L))**: Weighted information
+4. **-Σᵢ**: Negative sum over all classes
+   - Negative because log of probability < 1 is negative
+5. **Result**: Entropy measures uncertainty in labeled data
+
+**Example calculation**:
+- Labeled set: 6 examples of class A, 4 examples of class B
+- P(A | L) = 6/10 = 0.6
+- P(B | L) = 4/10 = 0.4
+- H(Y | L) = -(0.6 × log₂(0.6) + 0.4 × log₂(0.4))
+- H(Y | L) = -(0.6 × (-0.737) + 0.4 × (-1.322))
+- H(Y | L) = -(-0.442 - 0.529) = 0.971 bits
+
+#### **Step 2: Conditional Entropy After Adding Unlabeled Data**
+
+**After pseudo-labeling unlabeled data U**:
+```
+H(Y | L ∪ U_pseudo) = -Σᵢ P(yᵢ | L ∪ U_pseudo) × log₂(P(yᵢ | L ∪ U_pseudo))
+```
+
+**Step-by-step**:
+1. **U_pseudo**: Subset of U that received pseudo-labels
+2. **L ∪ U_pseudo**: Combined labeled and pseudo-labeled set
+3. **P(yᵢ | L ∪ U_pseudo)**: Updated class proportions
+4. **Calculate entropy**: Same formula as Step 1, but with updated probabilities
+
+**Information Gain**:
+```
+IG = H(Y | L) - H(Y | L ∪ U_pseudo)
+```
+
+**Explanation**:
+- **H(Y | L)**: Uncertainty before adding pseudo-labels
+- **H(Y | L ∪ U_pseudo)**: Uncertainty after adding pseudo-labels
+- **IG**: Reduction in uncertainty (information gained)
+- **IG > 0**: Pseudo-labels reduced uncertainty (good!)
+- **IG = 0**: No change (pseudo-labels didn't help)
+- **IG < 0**: Uncertainty increased (bad pseudo-labels)
 
 ### 1.6 When to Use Semi-Supervised Learning
 
@@ -228,38 +388,6 @@ Where:
 - Base classifier performs poorly even on labeled data
 - Data is too noisy or unstructured
 
-### 1.7 Advantages & Limitations
-
-#### **Advantages**:
-- ✅ Reduces need for expensive labeled data
-- ✅ Leverages abundant unlabeled data
-- ✅ Can improve performance over supervised-only
-- ✅ Works with any base classifier
-- ✅ Practical for real-world scenarios
-
-#### **Limitations**:
-- ❌ Risk of error propagation (wrong pseudo-labels)
-- ❌ Requires assumptions (smoothness, cluster, manifold)
-- ❌ May not help if labeled data is too small
-- ❌ Sensitive to initial model quality
-- ❌ Can amplify biases in base classifier
-
-### 1.8 Applications
-
-**Text Classification**:
-- Email spam detection
-- Sentiment analysis
-- Document categorization
-
-**Computer Vision**:
-- Image classification
-- Object detection
-- Medical image analysis
-
-**Speech Recognition**:
-- Transcribe audio with few labeled examples
-- Leverage large unlabeled audio corpora
-
 ---
 
 ## 2. Self-Supervised Learning (2.4)
@@ -270,250 +398,463 @@ Where:
 
 **Key Insight**: Data contains inherent structure that can be used as supervision!
 
-**Real-World Analogy**:
-- Learning to read: You don't need someone to tell you every word
-- You can learn by predicting missing words in sentences
-- The sentence structure itself provides the "label" (what word should go here)
+### 2.2 Masked Language Modeling: Mathematical Derivation
 
-**Famous Example**: GPT (Generative Pre-trained Transformer)
-- Mask words in text
-- Predict what word should fill the blank
-- Learn language representations from this task
+#### **Step 1: Problem Setup**
 
-### 2.2 Core Concepts
+**Given**: Sentence x = [x₁, x₂, ..., xₙ] where each xᵢ is a word/token
 
-#### **What is Self-Supervision?**
+**Masking**: Randomly mask some positions M = {i₁, i₂, ..., iₘ} where m < n
 
-**Traditional Supervised Learning**:
-- Need external labels: (image, "cat"), (text, "positive")
-- Labels come from humans or external sources
+**Masked sentence**: x_masked where xᵢ is replaced with [MASK] for i ∈ M
 
-**Self-Supervised Learning**:
-- Create labels from data itself
-- Task: Predict part of data from other parts
-- No external labeling needed!
+**Task**: Predict original words at masked positions
 
-**Key Principle**: 
-- Design a "pretext task" that forces the model to learn useful representations
-- The pretext task is not the final goal, but helps learn good features
+#### **Step 2: Conditional Probability**
 
-#### **Why It Matters**
+**Goal**: Learn P(xᵢ | x\ᵢ) for i ∈ M
 
-**The Labeling Problem**:
-- Labeling is expensive and time-consuming
-- Some domains have too much data to label manually
-- Self-supervision scales to massive datasets
+**Where**:
+- **xᵢ**: Word at position i (what we want to predict)
+- **x\ᵢ**: All words except position i (context)
+- **P(xᵢ | x\ᵢ)**: Probability of word xᵢ given context
 
-**Representation Learning**:
-- Learn general-purpose features
-- Can transfer to downstream tasks
-- Foundation for many modern AI systems
+**Step-by-step explanation**:
+1. **x\ᵢ = [x₁, ..., xᵢ₋₁, [MASK], xᵢ₊₁, ..., xₙ]**: Context with masked position
+2. **Model f**: Takes context x\ᵢ as input
+3. **Output**: Probability distribution over vocabulary V
+4. **P(xᵢ | x\ᵢ)**: Probability that word xᵢ appears at position i
 
-### 2.3 How Self-Supervised Learning Works
+#### **Step 3: Model Architecture**
 
-#### **General Framework**
-
-1. **Design Pretext Task**:
-   - Create a task that requires understanding data structure
-   - Task should be solvable from data alone
-   - Examples: predict missing parts, predict next item, predict transformation
-
-2. **Generate Pseudo-Labels**:
-   - Automatically create labels from data
-   - No human annotation needed
-   - Labels come from data structure
-
-3. **Train Model**:
-   - Train on pretext task
-   - Model learns useful representations
-   - Representations capture underlying patterns
-
-4. **Transfer to Downstream Task**:
-   - Use learned representations
-   - Fine-tune on actual task (with or without labels)
-   - Often achieves better performance
-
-### 2.4 Key Methods
-
-#### **1. Masked Language Modeling (GPT-style)**
-
-**Process**:
-1. Take a sentence: "The cat sat on the mat"
-2. Mask some words: "The [MASK] sat on the [MASK]"
-3. Train model to predict masked words
-4. Model learns language structure
-
-**Mathematical Formulation**:
+**Transformer encoder**:
 ```
-Given sentence: x = [x₁, x₂, ..., xₙ]
-Mask positions: M = {i₁, i₂, ..., iₘ}
-
-Task: Predict P(xᵢ | x\ᵢ) for i ∈ M
-
-Where:
-- x\ᵢ: All words except position i
-- Model learns: f(x\ᵢ) → probability distribution over vocabulary
+h = Encoder(x_masked)
 ```
 
-**Why It Works**:
-- To predict masked word, model must understand:
-  - Grammar and syntax
-  - Semantic relationships
-  - Context and meaning
-- These are exactly the representations we want!
+**Step-by-step**:
+1. **x_masked**: Input sequence with [MASK] tokens
+2. **Embedding**: Convert tokens to vectors
+   - E(xᵢ) for each position i
+   - E([MASK]) for masked positions
+3. **Encoder**: Multi-layer transformer
+   - Self-attention: Each position attends to all positions
+   - Feed-forward: Non-linear transformation
+   - Layer normalization: Stabilize training
+4. **h**: Hidden representations for each position
 
-**Example**:
+**Prediction head**:
 ```
-Input: "I love to [MASK] in the morning"
-Possible predictions:
-- "run" (high probability - makes sense)
-- "eat" (medium probability - also valid)
-- "fly" (low probability - less likely)
-
-Model learns that "run" and "eat" are more likely after "love to"
+P(xᵢ | x\ᵢ) = Softmax(W × hᵢ + b)
 ```
 
-#### **2. Next Token Prediction**
+**Step-by-step derivation**:
+1. **hᵢ**: Hidden representation at position i (from encoder)
+2. **W**: Weight matrix (|V| × d) where |V| is vocabulary size, d is hidden dimension
+3. **W × hᵢ**: Linear transformation (|V| × 1 vector)
+4. **+ b**: Add bias term (|V| × 1 vector)
+5. **Softmax**: Convert to probability distribution
+   ```
+   Softmax(z)ᵢ = exp(zᵢ) / Σⱼ exp(zⱼ)
+   ```
+6. **Result**: Probability distribution over vocabulary
 
-**Process**:
-1. Given sequence: [x₁, x₂, ..., xₜ]
-2. Predict next token: xₜ₊₁
-3. Train autoregressively (predict one token at a time)
+#### **Step 4: Loss Function**
 
-**Example**:
+**Cross-entropy loss for each masked position**:
 ```
-Sequence: "The weather is"
-Next token prediction: "nice" (or "sunny", "rainy", etc.)
-
-Model learns:
-- Sequential dependencies
-- Language patterns
-- Context understanding
-```
-
-#### **3. Contrastive Learning**
-
-**Core Idea**: Learn by contrasting similar vs. different examples.
-
-**Process**:
-1. Create positive pairs (similar examples)
-2. Create negative pairs (different examples)
-3. Train model to:
-   - Bring positive pairs closer in representation space
-   - Push negative pairs apart
-
-**Example - Images**:
-- Positive pair: Same image with different augmentations (rotation, crop)
-- Negative pair: Different images
-- Model learns: Augmented versions should have similar representations
-
-**Mathematical Formulation**:
-```
-Given:
-- Anchor: x
-- Positive: x⁺ (similar to x)
-- Negatives: {x₁⁻, x₂⁻, ..., xₖ⁻} (different from x)
-
-Objective: Maximize similarity(x, x⁺) and minimize similarity(x, xᵢ⁻)
-
-Loss: -log(exp(sim(x, x⁺)) / (exp(sim(x, x⁺)) + Σexp(sim(x, xᵢ⁻))))
+L_i = -log(P(xᵢ | x\ᵢ))
 ```
 
-#### **4. Autoencoding**
+**Step-by-step**:
+1. **P(xᵢ | x\ᵢ)**: Model's predicted probability of true word xᵢ
+2. **log(P(xᵢ | x\ᵢ))**: Logarithm of probability
+   - If P is high (close to 1), log is close to 0 (low loss)
+   - If P is low (close to 0), log is very negative (high loss)
+3. **Negative**: We want to maximize probability, so we minimize negative log
+4. **Result**: Loss is low when model predicts correct word with high confidence
 
-**Process**:
-1. Encode input to latent representation
-2. Decode back to original input
-3. Learn to reconstruct accurately
-
-**Why It Works**:
-- To reconstruct well, model must capture essential information
-- Latent representation becomes useful feature
-
-**Example**:
+**Total loss over all masked positions**:
 ```
-Input image → Encoder → Latent code → Decoder → Reconstructed image
-Loss: ||original - reconstructed||²
-
-Model learns compact representation that preserves important information
+L = (1/|M|) × Σ_{i ∈ M} L_i
+   = -(1/|M|) × Σ_{i ∈ M} log(P(xᵢ | x\ᵢ))
 ```
 
-### 2.5 Pretext Tasks by Domain
+**Step-by-step**:
+1. **L_i**: Loss for each masked position i
+2. **Σ_{i ∈ M}**: Sum over all masked positions
+3. **1/|M|**: Average over masked positions
+4. **Result**: Average negative log-likelihood
 
-#### **Natural Language Processing**
+**Why this works**:
+- **Maximizing P(xᵢ | x\ᵢ)**: Model learns to predict correct words
+- **Requires understanding context**: To predict well, model must understand:
+  - Grammar and syntax (word order matters)
+  - Semantics (meaning of words)
+  - Discourse (how sentences connect)
+- **Learns useful representations**: Hidden states h capture these understandings
 
-**Masked Language Modeling**:
-- BERT, GPT: Predict masked words
-- Learn word embeddings and context
+#### **Step 5: Training Objective**
 
-**Next Sentence Prediction**:
-- Predict if sentence B follows sentence A
-- Learn discourse and coherence
-
-**Sentence Ordering**:
-- Given shuffled sentences, predict correct order
-- Learn narrative structure
-
-#### **Computer Vision**
-
-**Image Inpainting**:
-- Mask part of image, predict missing region
-- Learn spatial structure
-
-**Rotation Prediction**:
-- Predict rotation angle of rotated image
-- Learn object orientation
-
-**Jigsaw Puzzles**:
-- Rearrange shuffled image patches
-- Learn spatial relationships
-
-**Colorization**:
-- Predict color from grayscale image
-- Learn semantic understanding
-
-#### **Time Series**
-
-**Temporal Prediction**:
-- Predict next value in sequence
-- Learn temporal patterns
-
-**Forecasting**:
-- Predict future values from past
-- Learn trends and seasonality
-
-### 2.6 Transfer to Downstream Tasks
-
-#### **Fine-Tuning**
-
-**Process**:
-1. Pre-train on self-supervised task (large unlabeled dataset)
-2. Fine-tune on downstream task (small labeled dataset)
-3. Often achieves better performance than training from scratch
-
-**Example - NLP**:
+**Maximum Likelihood Estimation (MLE)**:
 ```
-Step 1: Pre-train GPT on Wikipedia (self-supervised, no labels)
-Step 2: Fine-tune on sentiment analysis (small labeled dataset)
-Result: Better than training from scratch on sentiment data alone
+θ* = argmax_θ Π_{i ∈ M} P(xᵢ | x\ᵢ; θ)
 ```
 
-**Example - Vision**:
+**Step-by-step**:
+1. **Π_{i ∈ M}**: Product over all masked positions
+2. **P(xᵢ | x\ᵢ; θ)**: Probability depends on model parameters θ
+3. **argmax_θ**: Find parameters that maximize product of probabilities
+4. **Equivalent to minimizing negative log-likelihood**:
+   ```
+   log(Π P) = Σ log(P)
+   -log(Π P) = -Σ log(P) = L (our loss function)
+   ```
+
+**Gradient descent update**:
 ```
-Step 1: Pre-train on ImageNet (self-supervised, no labels needed)
-Step 2: Fine-tune on medical images (small labeled dataset)
-Result: Better performance with less labeled data
+θ^(t+1) = θ^(t) - η × ∇_θ L(θ^(t))
 ```
 
-#### **Feature Extraction**
+**Gradient calculation**:
+```
+∇_θ L = -(1/|M|) × Σ_{i ∈ M} ∇_θ log(P(xᵢ | x\ᵢ; θ))
+```
 
-**Process**:
-1. Pre-train on self-supervised task
-2. Extract features from pre-trained model
-3. Train simple classifier on extracted features
-4. Often works well with minimal fine-tuning
+**Step-by-step**:
+1. **log(P(xᵢ | x\ᵢ; θ))**: Log probability depends on θ
+2. **∇_θ log(P)**: Gradient with respect to parameters
+3. **Chain rule**: 
+   ```
+   ∇_θ log(P) = (1/P) × ∇_θ P
+              = (1/P) × (∂P/∂h) × (∂h/∂θ)
+   ```
+4. **Backpropagation**: Compute gradients through encoder and prediction head
+5. **Average**: Sum over masked positions and divide by |M|
 
-### 2.7 When to Use Self-Supervised Learning
+### 2.3 Contrastive Learning: Mathematical Derivation
+
+#### **Step 1: Problem Setup**
+
+**Given**:
+- Anchor example: x
+- Positive example: x⁺ (similar to x, e.g., augmented version)
+- Negative examples: {x₁⁻, x₂⁻, ..., xₖ⁻} (different from x)
+
+**Goal**: Learn representation where:
+- x and x⁺ are close in representation space
+- x and xᵢ⁻ are far in representation space
+
+#### **Step 2: Representation Function**
+
+**Encoder**: f(x; θ) → z (d-dimensional vector)
+
+**Step-by-step**:
+1. **x**: Input (image, text, etc.)
+2. **f(·; θ)**: Encoder network with parameters θ
+3. **z**: Learned representation (d-dimensional vector)
+4. **Normalization**: Often ||z|| = 1 (unit vector)
+
+#### **Step 3: Similarity Function**
+
+**Cosine similarity**:
+```
+sim(x, x') = (f(x) · f(x')) / (||f(x)|| × ||f(x')||)
+           = f(x) · f(x')  (if normalized)
+```
+
+**Step-by-step derivation**:
+1. **f(x) · f(x')**: Dot product of representation vectors
+   ```
+   f(x) · f(x') = Σᵢ f(x)ᵢ × f(x')ᵢ
+   ```
+2. **||f(x)||**: L2 norm of f(x)
+   ```
+   ||f(x)|| = √(Σᵢ f(x)ᵢ²)
+   ```
+3. **Division**: Normalize by magnitudes
+4. **If normalized**: ||f(x)|| = ||f(x')|| = 1, so:
+   ```
+   sim(x, x') = f(x) · f(x')
+   ```
+5. **Range**: [-1, 1] where 1 = identical, -1 = opposite
+
+**Temperature-scaled similarity**:
+```
+sim_τ(x, x') = (f(x) · f(x')) / τ
+```
+
+**Step-by-step**:
+1. **τ**: Temperature parameter (typically 0.1 to 0.5)
+2. **Division by τ**: Scales similarity
+   - Smaller τ: Sharper distribution (more confident)
+   - Larger τ: Softer distribution (less confident)
+3. **Effect**: Controls how much to separate positive and negative pairs
+
+#### **Step 4: Contrastive Loss (InfoNCE)**
+
+**InfoNCE Loss**:
+```
+L = -log(exp(sim_τ(x, x⁺)) / (exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻))))
+```
+
+**Step-by-step derivation**:
+
+**Step 4a: Numerator**
+```
+exp(sim_τ(x, x⁺)) = exp((f(x) · f(x⁺)) / τ)
+```
+
+**Explanation**:
+- **sim_τ(x, x⁺)**: Similarity between anchor and positive
+- **exp(·)**: Exponential function
+- **Result**: Large value when x and x⁺ are similar
+
+**Step 4b: Denominator**
+```
+exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻))
+```
+
+**Step-by-step**:
+1. **exp(sim_τ(x, x⁺))**: Positive pair similarity
+2. **exp(sim_τ(x, xᵢ⁻))**: Negative pair similarities
+3. **Σᵢ**: Sum over all negative examples
+4. **Total**: Sum of all similarities (positive + negatives)
+
+**Step 4c: Ratio**
+```
+exp(sim_τ(x, x⁺)) / (exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻)))
+```
+
+**Explanation**:
+- **Numerator**: Similarity to positive example
+- **Denominator**: Total similarity (positive + all negatives)
+- **Interpretation**: Probability that x⁺ is the positive example
+- **Range**: [0, 1]
+- **High value**: Model correctly identifies positive
+- **Low value**: Model confuses positive with negatives
+
+**Step 4d: Negative Log**
+```
+L = -log(ratio)
+```
+
+**Step-by-step**:
+1. **log(ratio)**: Natural logarithm of the ratio
+   - If ratio = 1 (perfect): log(1) = 0, so L = 0
+   - If ratio = 0 (worst): log(0) = -∞, so L = ∞
+2. **Negative**: We want to maximize ratio, so minimize negative log
+3. **Result**: Loss is low when model correctly separates positive from negatives
+
+**Final form**:
+```
+L = -log(exp(sim_τ(x, x⁺)) / (exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻))))
+```
+
+#### **Step 5: Simplification**
+
+**Using log properties**:
+```
+L = -[log(exp(sim_τ(x, x⁺))) - log(exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻)))]
+```
+
+**Step-by-step**:
+1. **log(a/b) = log(a) - log(b)**: Property of logarithms
+2. **Apply**: log(numerator) - log(denominator)
+3. **log(exp(sim_τ(x, x⁺))) = sim_τ(x, x⁺)**: log and exp cancel
+4. **Result**: Simplified form
+
+**Final simplified form**:
+```
+L = -sim_τ(x, x⁺) + log(exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻)))
+```
+
+**Explanation**:
+- **-sim_τ(x, x⁺)**: Pull positive pair closer (negative because we minimize)
+- **log(exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻)))**: Log-sum-exp term
+  - Pushes negative pairs away
+  - Log-sum-exp is smooth approximation of max function
+
+#### **Step 6: Gradient Calculation**
+
+**Gradient with respect to anchor representation f(x)**:
+```
+∇_{f(x)} L = -∇_{f(x)} sim_τ(x, x⁺) + ∇_{f(x)} log(exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻)))
+```
+
+**Step 6a: First term gradient**
+```
+∇_{f(x)} sim_τ(x, x⁺) = (1/τ) × f(x⁺)
+```
+
+**Step-by-step**:
+1. **sim_τ(x, x⁺) = (f(x) · f(x⁺)) / τ**
+2. **∇_{f(x)} (f(x) · f(x⁺))**: Gradient of dot product
+3. **Result**: f(x⁺) (the other vector in dot product)
+4. **Divide by τ**: Scale by temperature
+
+**Step 6b: Second term gradient**
+```
+∇_{f(x)} log(exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻))) 
+  = (1/Z) × [exp(sim_τ(x, x⁺)) × (1/τ) × f(x⁺) + Σᵢ exp(sim_τ(x, xᵢ⁻)) × (1/τ) × f(xᵢ⁻)]
+```
+
+**Step-by-step**:
+1. **Z = exp(sim_τ(x, x⁺)) + Σᵢ exp(sim_τ(x, xᵢ⁻))**: Normalization constant
+2. **Chain rule**: 
+   - ∇ log(g) = (1/g) × ∇g
+   - ∇ exp(sim) = exp(sim) × ∇ sim
+3. **∇ sim_τ(x, x⁺) = (1/τ) × f(x⁺)**: From Step 6a
+4. **∇ sim_τ(x, xᵢ⁻) = (1/τ) × f(xᵢ⁻)**: Similar for negatives
+5. **Combine**: Weighted sum of positive and negative representations
+
+**Complete gradient**:
+```
+∇_{f(x)} L = -(1/τ) × f(x⁺) + (1/Z) × (1/τ) × [exp(sim_τ(x, x⁺)) × f(x⁺) + Σᵢ exp(sim_τ(x, xᵢ⁻)) × f(xᵢ⁻)]
+```
+
+**Interpretation**:
+- **First term**: Pull toward positive example
+- **Second term**: Push away from weighted combination of positive and negatives
+- **Net effect**: Representations move closer to positives, farther from negatives
+
+### 2.4 Autoencoding: Mathematical Derivation
+
+#### **Step 1: Problem Setup**
+
+**Given**: Input x (e.g., image, text)
+
+**Goal**: Learn to reconstruct x from compressed representation
+
+**Architecture**:
+```
+x → Encoder → z → Decoder → x̂
+```
+
+#### **Step 2: Encoder**
+
+**Encoder function**:
+```
+z = Encoder(x; θ_e) = f_e(x; θ_e)
+```
+
+**Step-by-step**:
+1. **x**: Input (high-dimensional, e.g., 784-dim for 28×28 image)
+2. **f_e(·; θ_e)**: Encoder network with parameters θ_e
+3. **z**: Latent representation (low-dimensional, e.g., 32-dim)
+4. **Compression**: z has much fewer dimensions than x
+
+#### **Step 3: Decoder**
+
+**Decoder function**:
+```
+x̂ = Decoder(z; θ_d) = f_d(z; θ_d)
+```
+
+**Step-by-step**:
+1. **z**: Latent representation
+2. **f_d(·; θ_d)**: Decoder network with parameters θ_d
+3. **x̂**: Reconstructed input (same dimension as x)
+4. **Expansion**: z is expanded back to original dimension
+
+#### **Step 4: Reconstruction Loss**
+
+**Mean Squared Error (MSE)**:
+```
+L_reconstruction = (1/n) × ||x - x̂||²
+                  = (1/n) × Σᵢ (xᵢ - x̂ᵢ)²
+```
+
+**Step-by-step derivation**:
+1. **x**: Original input vector
+2. **x̂**: Reconstructed input vector
+3. **x - x̂**: Element-wise difference
+4. **||x - x̂||²**: Squared L2 norm
+   ```
+   ||x - x̂||² = Σᵢ (xᵢ - x̂ᵢ)²
+   ```
+5. **1/n**: Average over n dimensions (or examples)
+6. **Result**: Average squared reconstruction error
+
+**For images (per pixel)**:
+```
+L_reconstruction = (1/(H×W×C)) × Σ_{h,w,c} (x_{h,w,c} - x̂_{h,w,c})²
+```
+
+**Where**:
+- **H, W, C**: Height, width, channels
+- **x_{h,w,c}**: Pixel value at position (h, w, c)
+- **x̂_{h,w,c}**: Reconstructed pixel value
+
+#### **Step 5: Complete Objective**
+
+**Combined loss**:
+```
+L = L_reconstruction + λ × L_regularization
+```
+
+**Reconstruction term** (from Step 4):
+```
+L_reconstruction = (1/n) × ||x - Decoder(Encoder(x))||²
+```
+
+**Regularization term** (optional):
+```
+L_regularization = ||z||²  (L2 regularization on latent code)
+```
+
+**Step-by-step**:
+1. **||z||²**: Squared L2 norm of latent representation
+2. **Purpose**: Encourage compact representations
+3. **λ**: Regularization weight
+4. **Effect**: Prevents latent code from growing too large
+
+**Final objective**:
+```
+L(θ_e, θ_d) = (1/n) × ||x - f_d(f_e(x; θ_e); θ_d)||² + λ × ||f_e(x; θ_e)||²
+```
+
+#### **Step 6: Optimization**
+
+**Goal**: Find parameters that minimize reconstruction error
+
+```
+(θ_e*, θ_d*) = argmin_{θ_e, θ_d} L(θ_e, θ_d)
+```
+
+**Gradient descent**:
+```
+θ_e^(t+1) = θ_e^(t) - η × ∇_{θ_e} L
+θ_d^(t+1) = θ_d^(t) - η × ∇_{θ_d} L
+```
+
+**Gradient calculation (encoder)**:
+```
+∇_{θ_e} L = ∇_{θ_e} L_reconstruction + λ × ∇_{θ_e} L_regularization
+```
+
+**Step-by-step**:
+1. **L_reconstruction = (1/n) × ||x - f_d(f_e(x; θ_e); θ_d)||²**
+2. **Chain rule**:
+   ```
+   ∇_{θ_e} L_reconstruction = (2/n) × (x - x̂) × (∂x̂/∂z) × (∂z/∂θ_e)
+   ```
+3. **∂x̂/∂z**: Gradient through decoder
+4. **∂z/∂θ_e**: Gradient through encoder
+5. **Backpropagation**: Compute gradients through both networks
+
+**Gradient calculation (decoder)**:
+```
+∇_{θ_d} L = ∇_{θ_d} L_reconstruction
+          = (2/n) × (x - x̂) × (∂x̂/∂θ_d)
+```
+
+**Step-by-step**:
+1. **L_reconstruction depends on θ_d through x̂ = f_d(z; θ_d)**
+2. **Chain rule**: Gradient flows through decoder
+3. **No regularization term**: Decoder parameters not regularized (or separately)
+
+### 2.5 When to Use Self-Supervised Learning
 
 **✅ Use When:**
 - Large amount of unlabeled data available
@@ -528,993 +869,659 @@ Result: Better performance with less labeled data
 - Real-time constraints (pre-training can be slow)
 - Domain-specific tasks with no related unlabeled data
 
-### 2.8 Advantages & Limitations
-
-#### **Advantages**:
-- ✅ No need for labeled data (scales to massive datasets)
-- ✅ Learns rich, general-purpose representations
-- ✅ Transfers well to downstream tasks
-- ✅ Foundation for modern AI (GPT, BERT, etc.)
-- ✅ Can leverage structure in any data type
-
-#### **Limitations**:
-- ❌ Pre-training can be computationally expensive
-- ❌ Pretext task must be carefully designed
-- ❌ May not always transfer to target task
-- ❌ Requires large amounts of data
-- ❌ Less interpretable than supervised learning
-
-### 2.9 Applications
-
-**Large Language Models**:
-- GPT, BERT, T5: Pre-trained on text, fine-tuned for specific tasks
-- ChatGPT, Claude: Built on self-supervised foundation
-
-**Computer Vision**:
-- Image classification
-- Object detection
-- Medical imaging
-
-**Speech Recognition**:
-- Learn audio representations
-- Transfer to transcription tasks
-
 ---
 
 ## 3. Other Learning Paradigms (2.5)
 
 ### 3.1 Multi-Model Learning
 
-### 3.1.1 Intuition & Goal
+### 3.1.1 Mathematical Formulation
 
-**Goal**: Train multiple models on different data subsets or views, and have them collaborate to improve learning.
+#### **Step 1: Problem Setup**
 
-**Key Insight**: Different models see data differently - combine their perspectives!
-
-**Real-World Analogy**:
-- Medical diagnosis: Multiple doctors examine patient from different angles
-- Each doctor has different expertise (different "views" of the data)
-- Combine their opinions for better diagnosis
-
-### 3.1.2 Core Concepts
-
-#### **Multiple Models, Multiple Views**
-
-**Different Data Subsets**:
-- Model 1: Trained on subset A
-- Model 2: Trained on subset B
-- Model 3: Trained on subset C
-- Each sees different examples
-
-**Different Feature Views**:
-- Model 1: Uses features [X₁, X₂, X₃]
-- Model 2: Uses features [X₄, X₅, X₆]
-- Each sees different aspects of data
-
-**Different Algorithms**:
-- Model 1: Decision Tree
-- Model 2: Neural Network
-- Model 3: SVM
-- Each has different inductive bias
-
-### 3.1.3 How Multi-Model Learning Works
-
-#### **Process**
-
-1. **Train Multiple Models**:
-   - Each model on different subset/view
-   - Models learn complementary information
-
-2. **High-Confidence Labeling**:
-   - Each model predicts on unlabeled data
-   - High-confidence predictions become labels for other models
-   - Models teach each other
-
-3. **Iterative Refinement**:
-   - Models retrain with new labels from other models
-   - Process repeats until convergence
-
-4. **Final Prediction**:
-   - Combine predictions from all models
-   - Ensemble or majority voting
-
-#### **Mathematical Formulation**
-
-```
-Given:
+**Given**:
 - Labeled data: L = {(x₁, y₁), ..., (xₗ, yₗ)}
 - Unlabeled data: U = {xₗ₊₁, ..., xₗ₊ᵤ}
 - M models: f₁, f₂, ..., fₘ
 - Each model trained on different subset/view
 
-For each iteration:
-  For each model fᵢ:
-    - Predict on U: ŷ = fᵢ(x) for x ∈ U
-    - Select high-confidence predictions: {x | confidence(ŷ) > threshold}
-    - Add to training set for other models
-  Retrain all models on expanded training sets
+#### **Step 2: Individual Model Training**
+
+**Model i on its subset**:
+```
+f_i* = argmin_{f_i} (1/|L_i|) × Σ_{(x,y) ∈ L_i} l(f_i(x), y)
 ```
 
-### 3.1.4 Key Variants
+**Step-by-step**:
+1. **L_i**: Subset of labeled data for model i
+   - Could be different features (view)
+   - Could be different examples (bootstrap sample)
+   - Could be different algorithm
+2. **l(f_i(x), y)**: Loss function
+3. **argmin**: Find best parameters for model i
+4. **Result**: Each model learns from its own perspective
 
-#### **Multi-View Learning**
+#### **Step 3: Prediction Aggregation**
 
-**Definition**: Data has multiple independent views/representations.
+**For unlabeled example x**:
+```
+ŷ = Aggregate({f₁*(x), f₂*(x), ..., fₘ*(x)})
+```
 
-**Example**:
-- Web page classification:
-  - View 1: Text content
-  - View 2: Hyperlink structure
-  - View 3: Images on page
-- Each view provides complementary information
+**Majority voting (classification)**:
+```
+ŷ = argmax_y Σ_{i=1}^M I(f_i*(x) = y)
+```
 
-**Process**:
-1. Train separate model for each view
-2. Models make predictions independently
-3. Combine predictions (voting, averaging)
-4. High-confidence predictions from one view label data for others
+**Step-by-step derivation**:
+1. **f_i*(x)**: Prediction of model i
+2. **I(f_i*(x) = y)**: Indicator function
+   - I(condition) = 1 if condition true, 0 otherwise
+3. **Σ_{i=1}^M I(f_i*(x) = y)**: Count how many models predict class y
+4. **argmax_y**: Choose class with most votes
+5. **Result**: Class predicted by majority of models
 
-#### **Co-Training (Multi-Model Variant)**
+**Averaging (regression)**:
+```
+ŷ = (1/M) × Σ_{i=1}^M f_i*(x)
+```
 
-**Two-Model Co-Training**:
-- Model 1: Trained on View 1
-- Model 2: Trained on View 2
-- They label unlabeled data for each other
+**Step-by-step**:
+1. **f_i*(x)**: Prediction of model i (continuous value)
+2. **Σ_{i=1}^M**: Sum over all models
+3. **1/M**: Average
+4. **Result**: Mean prediction across models
 
-**Multi-Model Extension**:
-- N models, each on different view
-- All models collaborate
-- More robust than two-model version
+**Weighted averaging**:
+```
+ŷ = Σ_{i=1}^M w_i × f_i*(x)
+```
 
-### 3.1.5 When to Use Multi-Model Learning
+**Where**:
+- **w_i**: Weight for model i
+- **Σ w_i = 1**: Weights sum to 1
+- **w_i**: Could be based on model performance, confidence, etc.
 
-**✅ Use When:**
-- Data has multiple natural views/representations
-- Different models capture different aspects
-- Want to leverage model diversity
-- Have computational resources for multiple models
-- Working with semi-supervised setting
+#### **Step 4: High-Confidence Labeling**
 
-**❌ Don't Use When:**
-- Single view is sufficient
-- Computational resources limited
-- Models are too similar (no diversity benefit)
-- Simple problem that doesn't need complexity
+**For each model i**:
+```
+U_i = {x ∈ U | confidence_i(x) > threshold}
+```
 
-### 3.1.6 Applications
+**Step-by-step**:
+1. **confidence_i(x)**: Model i's confidence in prediction
+   - For classification: max probability
+   - For regression: inverse of prediction variance
+2. **threshold**: Confidence threshold (e.g., 0.9)
+3. **U_i**: Unlabeled examples where model i is confident
+4. **These become pseudo-labels for other models**
 
-**Fraud Detection**:
-- Model 1: Transaction patterns
-- Model 2: User behavior
-- Model 3: Network analysis
-- Combine for better detection
+**Pseudo-label creation**:
+```
+L_i^pseudo = {(x, f_i*(x)) | x ∈ U_i}
+```
 
-**Object Detection**:
-- Model 1: RGB images
-- Model 2: Depth information
-- Model 3: Motion cues
-- Multi-modal fusion
+**Step-by-step**:
+1. **f_i*(x)**: Model i's prediction (treated as label)
+2. **L_i^pseudo**: Pseudo-labeled set from model i
+3. **Used to train other models**
 
-**Medical Diagnosis**:
-- Model 1: Patient symptoms
-- Model 2: Lab results
-- Model 3: Imaging data
-- Collaborative diagnosis
+#### **Step 5: Iterative Refinement**
 
----
+**Update model i**:
+```
+f_i^(t+1) = argmin_{f_i} (1/|L_i ∪ L_{-i}^pseudo|) × Σ_{(x,y) ∈ L_i ∪ L_{-i}^pseudo} l(f_i(x), y)
+```
+
+**Step-by-step**:
+1. **L_i**: Original labeled data for model i
+2. **L_{-i}^pseudo**: Pseudo-labels from other models (not model i)
+3. **L_i ∪ L_{-i}^pseudo**: Combined training set
+4. **Train**: Model i learns from its own data + other models' confident predictions
+5. **Result**: Models teach each other iteratively
 
 ### 3.2 Active Learning
 
-### 3.2.1 Intuition & Goal
+### 3.2.1 Uncertainty Sampling: Mathematical Derivation
 
-**Goal**: Intelligently select which data points to label, minimizing labeling cost while maximizing model performance.
+#### **Step 1: Entropy-Based Uncertainty**
 
-**Key Insight**: Not all data points are equally valuable for learning!
-
-**Real-World Analogy**:
-- Student studying for exam
-- Instead of reading entire textbook, focus on areas you're uncertain about
-- Ask teacher (oracle) about confusing topics
-- Learn more efficiently
-
-**The Oracle**:
-- Human expert who can provide labels
-- Expensive resource (time, money)
-- Use strategically!
-
-### 3.2.2 Core Concepts
-
-#### **The Active Learning Loop**
-
-1. **Start with Small Labeled Set**:
-   - Initial labeled data: L₀
-   - Train initial model
-
-2. **Query Strategy**:
-   - Model identifies uncertain/unlabeled points
-   - Selects most informative examples
-   - Queries oracle for labels
-
-3. **Update Model**:
-   - Add newly labeled examples
-   - Retrain model
-   - Model improves
-
-4. **Repeat**:
-   - Continue until:
-     - Performance is satisfactory
-     - Budget exhausted
-     - No more informative examples
-
-#### **Query Strategies**
-
-**1. Uncertainty Sampling**:
-- Select points where model is most uncertain
-- High entropy predictions
-- Model is "confused" about these points
-
-**Mathematical Formulation**:
+**Entropy of prediction distribution**:
 ```
-Uncertainty(x) = H(P(y|x)) = -Σ P(yᵢ|x) × log(P(yᵢ|x))
-
-Select: argmax_{x ∈ U} Uncertainty(x)
+H(P(y|x)) = -Σᵢ P(yᵢ|x) × log(P(yᵢ|x))
 ```
 
-**Example**:
-- Model predicts: [0.45, 0.50, 0.05] (high uncertainty)
-- Model predicts: [0.95, 0.03, 0.02] (low uncertainty)
-- Query the first one!
+**Step-by-step derivation**:
+1. **P(y|x)**: Probability distribution over classes for input x
+   - P(yᵢ|x): Probability of class i given x
+   - Σᵢ P(yᵢ|x) = 1 (valid distribution)
+2. **log(P(yᵢ|x))**: Natural logarithm of probability
+3. **P(yᵢ|x) × log(P(yᵢ|x))**: Weighted log probability
+4. **-Σᵢ**: Negative sum over all classes
+5. **Result**: Entropy measures uncertainty
+   - **H = 0**: Certain (one class has probability 1)
+   - **H = log(K)**: Maximum uncertainty (uniform distribution over K classes)
 
-**2. Query-by-Committee**:
-- Train multiple models (committee)
-- Points where models disagree are informative
-- Select points with maximum disagreement
+**Example calculation**:
+- 3 classes, prediction: [0.1, 0.8, 0.1]
+- H = -(0.1×log(0.1) + 0.8×log(0.8) + 0.1×log(0.1))
+- H = -(-0.230 - 0.179 - 0.230) = 0.639 (moderate uncertainty)
 
-**Process**:
-1. Train K different models
-2. Each makes prediction on unlabeled data
-3. Measure disagreement (variance, entropy)
-4. Query points with highest disagreement
+- Uniform: [0.33, 0.33, 0.33]
+- H = -(0.33×log(0.33) + 0.33×log(0.33) + 0.33×log(0.33))
+- H = -(-0.361 - 0.361 - 0.361) = 1.083 (high uncertainty, close to log(3) = 1.099)
 
-**3. Expected Model Change**:
-- Select points that would change model the most
-- Measure gradient or parameter change
-- Most "surprising" examples
+#### **Step 2: Query Selection**
 
-**4. Expected Error Reduction**:
-- Select points that would reduce error the most
-- Simulate labeling and measure error reduction
-- Most "impactful" examples
-
-### 3.2.3 How Active Learning Works
-
-#### **Step-by-Step Process**
-
-```
-1. Initialization:
-   L = {(x₁, y₁), ..., (xₗ, yₗ)}  // Small labeled set
-   U = {xₗ₊₁, ..., xₗ₊ᵤ}          // Large unlabeled set
-   Budget = B                      // Labeling budget
-
-2. Train model f on L
-
-3. While |L| < B:
-   a. For each x ∈ U:
-        - Compute informativeness: I(x) = QueryStrategy(f, x)
-   
-   b. Select: x* = argmax_{x ∈ U} I(x)
-   
-   c. Query oracle: y* = Oracle(x*)
-   
-   d. Update: L = L ∪ {(x*, y*)}
-              U = U \ {x*}
-   
-   e. Retrain: f = Train(L)
-
-4. Return final model f
-```
-
-### 3.2.4 Query Strategies Explained
-
-#### **Uncertainty Sampling**
-
-**Types**:
-
-**Least Confident**:
-```
-x* = argmax_{x ∈ U} (1 - max_y P(y|x))
-```
-- Select point where max probability is lowest
-- Model is least confident about top prediction
-
-**Margin Sampling**:
-```
-x* = argmin_{x ∈ U} (P(y₁|x) - P(y₂|x))
-```
-- y₁, y₂: Top two predictions
-- Small margin = model unsure between top two classes
-
-**Entropy-Based**:
+**Select most uncertain example**:
 ```
 x* = argmax_{x ∈ U} H(P(y|x))
 ```
-- High entropy = high uncertainty
-- Most common approach
 
-#### **Query-by-Committee**
+**Step-by-step**:
+1. **U**: Set of unlabeled examples
+2. **H(P(y|x))**: Entropy for each x ∈ U
+3. **argmax**: Find x with maximum entropy
+4. **Result**: Example where model is most uncertain
 
-**Disagreement Measures**:
+#### **Step 3: Margin-Based Uncertainty**
 
-**Vote Entropy**:
+**Margin**:
 ```
-H_vote(x) = -Σ (V(y)/K) × log(V(y)/K)
+margin(x) = P(y₁|x) - P(y₂|x)
 ```
-- V(y): Number of models voting for class y
-- K: Total number of models
-- High when models disagree
 
-**KL Divergence**:
+**Step-by-step**:
+1. **y₁**: Most likely class: y₁ = argmax_i P(yᵢ|x)
+2. **y₂**: Second most likely class: y₂ = argmax_{i≠y₁} P(yᵢ|x)
+3. **P(y₁|x) - P(y₂|x)**: Difference between top two probabilities
+4. **Small margin**: Model unsure between top two classes (high uncertainty)
+5. **Large margin**: Model confident in top class (low uncertainty)
+
+**Query selection**:
 ```
-KL(P_avg || P_i) for each model i
+x* = argmin_{x ∈ U} margin(x)
 ```
-- Measure how much each model diverges from average
-- High divergence = high disagreement
 
-### 3.2.5 When to Use Active Learning
+**Step-by-step**:
+1. **margin(x)**: Margin for each unlabeled example
+2. **argmin**: Find x with minimum margin
+3. **Result**: Example where model is least confident between top two classes
 
-**✅ Use When:**
-- Labeling is expensive (time, money, expertise)
-- Large pool of unlabeled data available
-- Can interactively query oracle
-- Model uncertainty can be estimated
-- Want to minimize labeling cost
+#### **Step 4: Least Confident**
 
-**❌ Don't Use When:**
-- Labeling is cheap and fast
-- Small dataset (may not benefit)
-- Batch labeling required (can't query interactively)
-- Oracle is unreliable
-- Model uncertainty estimates are poor
+**Confidence**:
+```
+confidence(x) = max_i P(yᵢ|x)
+```
 
-### 3.2.6 Advantages & Limitations
+**Step-by-step**:
+1. **P(yᵢ|x)**: Probability of each class
+2. **max_i**: Maximum probability
+3. **confidence(x)**: Model's confidence in most likely class
+4. **High confidence**: Model is sure
+5. **Low confidence**: Model is uncertain
 
-#### **Advantages**:
-- ✅ Reduces labeling cost significantly
-- ✅ Focuses on informative examples
-- ✅ Often achieves same performance with fewer labels
-- ✅ Interactive learning process
-- ✅ Practical for real-world scenarios
+**Query selection**:
+```
+x* = argmin_{x ∈ U} confidence(x)
+```
 
-#### **Limitations**:
-- ❌ Requires interactive oracle (may not always be available)
-- ❌ Query strategy must be well-designed
-- ❌ Initial model quality matters
-- ❌ May have cold start problem
-- ❌ Computational overhead for query selection
+**Step-by-step**:
+1. **confidence(x)**: Confidence for each unlabeled example
+2. **argmin**: Find x with minimum confidence
+3. **Result**: Example where model is least confident
 
-### 3.2.7 Applications
+### 3.2.2 Query-by-Committee: Mathematical Derivation
 
-**Medical Imaging**:
-- Radiologist labels uncertain cases
-- Focus on difficult diagnoses
-- Reduce annotation time
+#### **Step 1: Committee Setup**
 
-**Text Classification**:
-- Human annotator labels uncertain documents
-- Focus on ambiguous cases
-- Efficient labeling
+**Train K models**: f₁, f₂, ..., fₖ
 
-**Speech Recognition**:
-- Transcribe uncertain audio segments
-- Focus on difficult pronunciations
-- Improve with less data
+**Different models**:
+- Different algorithms
+- Different hyperparameters
+- Different training subsets
+- Different initializations
 
----
+#### **Step 2: Vote Entropy**
+
+**Vote count for class y**:
+```
+V(y) = Σ_{i=1}^K I(f_i(x) = y)
+```
+
+**Step-by-step**:
+1. **f_i(x)**: Prediction of model i
+2. **I(f_i(x) = y)**: Indicator (1 if model i predicts y, 0 otherwise)
+3. **Σ_{i=1}^K**: Sum over all K models
+4. **V(y)**: Number of models voting for class y
+
+**Vote entropy**:
+```
+H_vote(x) = -Σ_y (V(y)/K) × log(V(y)/K)
+```
+
+**Step-by-step derivation**:
+1. **V(y)/K**: Proportion of models voting for class y
+   - Range: [0, 1]
+   - Σ_y (V(y)/K) = 1 (all models vote)
+2. **log(V(y)/K)**: Logarithm of vote proportion
+3. **(V(y)/K) × log(V(y)/K)**: Weighted log
+4. **-Σ_y**: Negative sum over all classes
+5. **Result**: Entropy of vote distribution
+   - **High H_vote**: Models disagree (high uncertainty)
+   - **Low H_vote**: Models agree (low uncertainty)
+
+**Example**:
+- 5 models, 3 classes
+- Votes: [3, 2, 0] (3 vote class A, 2 vote class B, 0 vote class C)
+- H_vote = -((3/5)×log(3/5) + (2/5)×log(2/5) + (0/5)×log(0/5))
+- H_vote = -((0.6)×(-0.511) + (0.4)×(-0.916) + 0)
+- H_vote = -(0.307 + 0.366) = 0.673 (moderate disagreement)
+
+- Unanimous: [5, 0, 0]
+- H_vote = -((5/5)×log(5/5) + 0 + 0) = -log(1) = 0 (no disagreement)
+
+#### **Step 3: KL Divergence**
+
+**Average prediction**:
+```
+P_avg(y|x) = (1/K) × Σ_{i=1}^K P_i(y|x)
+```
+
+**Step-by-step**:
+1. **P_i(y|x)**: Probability distribution from model i
+2. **Σ_{i=1}^K**: Sum over all models
+3. **1/K**: Average
+4. **P_avg(y|x)**: Average probability distribution
+
+**KL divergence for each model**:
+```
+KL(P_avg || P_i) = Σ_y P_avg(y|x) × log(P_avg(y|x) / P_i(y|x))
+```
+
+**Step-by-step derivation**:
+1. **P_avg(y|x) / P_i(y|x)**: Ratio of average to individual
+2. **log(ratio)**: Logarithm of ratio
+3. **P_avg(y|x) × log(ratio)**: Weighted log ratio
+4. **Σ_y**: Sum over all classes
+5. **Result**: Measures how much model i diverges from average
+   - **High KL**: Model i disagrees with average (high uncertainty)
+   - **Low KL**: Model i agrees with average (low uncertainty)
+
+**Total disagreement**:
+```
+Disagreement(x) = (1/K) × Σ_{i=1}^K KL(P_avg || P_i)
+```
+
+**Step-by-step**:
+1. **KL(P_avg || P_i)**: Divergence of each model from average
+2. **Σ_{i=1}^K**: Sum over all models
+3. **1/K**: Average divergence
+4. **Result**: Average disagreement across committee
+
+**Query selection**:
+```
+x* = argmax_{x ∈ U} Disagreement(x)
+```
 
 ### 3.3 Transfer Learning
 
-### 3.3.1 Intuition & Goal
+### 3.3.1 Mathematical Formulation
 
-**Goal**: Leverage knowledge learned from one task (source) to improve performance on a related but different task (target).
+#### **Step 1: Source Task**
 
-**Key Insight**: Knowledge is transferable across related domains!
+**Source dataset**: D_source = {(x_s, y_s)}
 
-**Real-World Analogy**:
-- Learning to drive a car helps you learn to drive a truck
-- Knowledge of French helps you learn Spanish
-- Skills transfer across related tasks
-
-**The Transfer Problem**:
-- Source task: Large labeled dataset, well-studied
-- Target task: Small labeled dataset, new domain
-- Transfer knowledge from source to target
-
-### 3.3.2 Core Concepts
-
-#### **Source vs. Target Tasks**
-
-**Source Task (Pre-training)**:
-- Large labeled dataset: D_source
-- Well-studied domain
-- Model learns general representations
-- Examples: ImageNet (images), Wikipedia (text)
-
-**Target Task (Fine-tuning)**:
-- Small labeled dataset: D_target
-- Related but different domain
-- Adapt pre-trained model
-- Examples: Medical images, domain-specific text
-
-#### **What Gets Transferred?**
-
-**Low-Level Features**:
-- Edges, textures, patterns (vision)
-- Word embeddings, syntax (NLP)
-- General patterns that work across domains
-
-**High-Level Representations**:
-- Object parts, semantic concepts
-- Language understanding
-- Abstract knowledge
-
-**Architecture Knowledge**:
-- Model structure
-- Learning strategies
-- Optimization insights
-
-### 3.3.3 How Transfer Learning Works
-
-#### **Process**
-
-1. **Pre-train on Source Task**:
-   - Train model on large source dataset
-   - Learn general-purpose representations
-   - Model captures domain knowledge
-
-2. **Adapt to Target Task**:
-   - Option A: Fine-tune entire model
-   - Option B: Freeze early layers, fine-tune later layers
-   - Option C: Use as feature extractor, train new classifier
-
-3. **Evaluate on Target Task**:
-   - Test on target domain
-   - Usually better than training from scratch
-
-#### **Fine-Tuning Strategies**
-
-**Full Fine-Tuning**:
-- Update all parameters
-- Use small learning rate
-- Risk of catastrophic forgetting
-
-**Layer-wise Fine-Tuning**:
-- Freeze early layers (low-level features)
-- Fine-tune later layers (high-level features)
-- Common in vision: freeze CNN, fine-tune classifier
-
-**Feature Extraction**:
-- Freeze entire pre-trained model
-- Extract features
-- Train new classifier on top
-- Fastest, least flexible
-
-### 3.3.4 Transfer Learning Scenarios
-
-#### **Scenario 1: Same Task, Different Domain**
-
-**Example**:
-- Source: Natural images (ImageNet)
-- Target: Medical images (X-rays)
-- Task: Image classification (same task, different domain)
-
-**Process**:
-1. Pre-train CNN on ImageNet
-2. Fine-tune on medical images
-3. Model adapts to new domain
-
-#### **Scenario 2: Different Task, Same Domain**
-
-**Example**:
-- Source: Image classification
-- Target: Object detection
-- Domain: Natural images (same)
-
-**Process**:
-1. Pre-train on classification
-2. Adapt architecture for detection
-3. Fine-tune on detection task
-
-#### **Scenario 3: Different Task, Different Domain**
-
-**Example**:
-- Source: Text classification
-- Target: Image captioning
-- Different tasks and domains
-
-**Process**:
-- Transfer high-level concepts
-- Adapt architecture significantly
-- More challenging
-
-### 3.3.5 Mathematical Foundation
-
-#### **Transfer Learning Objective**
-
+**Source model**:
 ```
-L_target = L_supervised(D_target) + λ × L_transfer(f_source, f_target)
+f_source* = argmin_{f_source} (1/|D_source|) × Σ_{(x_s, y_s) ∈ D_source} l(f_source(x_s), y_s)
 ```
 
-Where:
-- **L_supervised**: Loss on target task
-- **L_transfer**: Regularization from source model
-- **λ**: Transfer weight
-- **f_source**: Pre-trained source model
-- **f_target**: Target model being trained
+**Step-by-step**:
+1. **f_source**: Model for source task
+2. **l(·, ·)**: Loss function
+3. **argmin**: Find best parameters
+4. **Result**: Pre-trained model on source task
 
-#### **Feature Similarity**
+#### **Step 2: Transfer Objective**
 
-**Idea**: Representations should be similar for similar inputs.
+**Target dataset**: D_target = {(x_t, y_t)} (small)
 
+**Transfer learning objective**:
 ```
-L_transfer = ||f_source(x) - f_target(x)||²
+L_target = L_supervised + λ × L_transfer
 ```
 
-- Encourage target model to learn similar features
-- Especially for early layers
+**Supervised term**:
+```
+L_supervised = (1/|D_target|) × Σ_{(x_t, y_t) ∈ D_target} l(f_target(x_t), y_t)
+```
 
-### 3.3.6 When to Use Transfer Learning
+**Step-by-step**:
+1. **f_target**: Model for target task
+2. **l(f_target(x_t), y_t)**: Loss on target data
+3. **Average**: Over target examples
+4. **Result**: Ensures model fits target data
 
-**✅ Use When:**
-- Target task has limited labeled data
-- Source and target tasks are related
-- Pre-trained models available for source task
-- Computational resources limited
-- Want to leverage existing knowledge
+**Transfer term**:
+```
+L_transfer = D(f_source(x_t), f_target(x_t))
+```
 
-**❌ Don't Use When:**
-- Source and target are very different
-- Have sufficient labeled data for target
-- Pre-trained models don't exist
-- Transfer might hurt (negative transfer)
-- Target task is too different from source
+**Step-by-step**:
+1. **f_source(x_t)**: Source model's representation of target input
+2. **f_target(x_t)**: Target model's representation
+3. **D(·, ·)**: Distance metric (e.g., MSE, KL divergence)
+4. **Result**: Encourages target model to learn similar representations to source
 
-### 3.3.7 Advantages & Limitations
+**Complete objective**:
+```
+L_target = (1/|D_target|) × Σ_{(x_t, y_t) ∈ D_target} l(f_target(x_t), y_t) 
+          + λ × (1/|D_target|) × Σ_{x_t ∈ D_target} D(f_source(x_t), f_target(x_t))
+```
 
-#### **Advantages**:
-- ✅ Reduces need for labeled target data
-- ✅ Faster training (start from good initialization)
-- ✅ Better performance with less data
-- ✅ Leverages large-scale pre-training
-- ✅ Common practice in modern ML
+#### **Step 3: Fine-Tuning**
 
-#### **Limitations**:
-- ❌ Requires related source task
-- ❌ May have negative transfer (hurts performance)
-- ❌ Catastrophic forgetting possible
-- ❌ Domain shift issues
-- ❌ Architecture constraints
+**Initialize target model with source parameters**:
+```
+θ_target^(0) = θ_source*
+```
 
-### 3.3.8 Applications
+**Step-by-step**:
+1. **θ_source***: Learned parameters from source task
+2. **θ_target^(0)**: Initial parameters for target task
+3. **Start from source**: Target model begins with source knowledge
 
-**Natural Language Processing**:
-- BERT, GPT: Pre-trained on large text, fine-tuned for specific tasks
-- Sentiment analysis, question answering, translation
+**Fine-tune on target task**:
+```
+θ_target* = argmin_{θ_target} L_target(θ_target)
+```
 
-**Computer Vision**:
-- ImageNet pre-training → medical imaging, satellite imagery
-- Object detection, segmentation
+**Gradient descent**:
+```
+θ_target^(t+1) = θ_target^(t) - η × ∇_{θ_target} L_target(θ_target^(t))
+```
 
-**Speech Recognition**:
-- Pre-train on large audio corpus
-- Fine-tune for specific languages or accents
+**Gradient calculation**:
+```
+∇_{θ_target} L_target = ∇_{θ_target} L_supervised + λ × ∇_{θ_target} L_transfer
+```
 
----
+**Step-by-step**:
+1. **∇_{θ_target} L_supervised**: Gradient from target task loss
+2. **∇_{θ_target} L_transfer**: Gradient from transfer term
+3. **λ**: Balances between fitting target and staying close to source
+4. **Result**: Model adapts to target while retaining source knowledge
+
+#### **Step 4: Feature Extraction Alternative**
+
+**Freeze source model**:
+```
+f_source(x) = fixed (parameters frozen)
+```
+
+**Extract features**:
+```
+z = f_source(x)
+```
+
+**Train new classifier**:
+```
+g* = argmin_g (1/|D_target|) × Σ_{(x_t, y_t) ∈ D_target} l(g(f_source(x_t)), y_t)
+```
+
+**Step-by-step**:
+1. **f_source(x_t)**: Extract features using frozen source model
+2. **g(·)**: New classifier (only this is trained)
+3. **l(g(z), y_t)**: Loss on target labels
+4. **Result**: Only classifier is learned, features come from source
 
 ### 3.4 Federated Learning
 
-### 3.4.1 Intuition & Goal
+### 3.4.1 Federated Averaging: Mathematical Derivation
 
-**Goal**: Train machine learning models across decentralized data sources (devices) without centralizing the data.
+#### **Step 1: Problem Setup**
 
-**Key Insight**: Keep data local, share only model updates!
-
-**Real-World Problem**:
-- Data is distributed (phones, hospitals, companies)
-- Privacy concerns (can't share raw data)
-- Regulatory requirements (GDPR, HIPAA)
-- Still want to train good models
-
-**Real-World Analogy**:
-- Multiple hospitals want to train medical AI
-- Can't share patient data (privacy)
-- But can share "lessons learned" (model updates)
-- Aggregate knowledge without sharing data
-
-### 3.4.2 Core Concepts
-
-#### **The Federated Setting**
-
-**Distributed Data**:
-- Data on N devices: D₁, D₂, ..., Dₙ
-- Each device has local dataset
-- Data never leaves device
-
-**Central Server**:
-- Coordinates training
-- Aggregates model updates
-- Distributes global model
-- Never sees raw data
-
-**Privacy Preservation**:
-- Raw data stays on devices
-- Only model updates (weights) shared
-- Updates can be encrypted
-- Differential privacy possible
-
-### 3.4.3 How Federated Learning Works
-
-#### **Federated Averaging Algorithm**
-
-**Process**:
-
-1. **Initialization**:
-   - Server initializes global model: w⁰
-   - Distributes to all devices
-
-2. **Local Training (Round t)**:
-   - Each device i:
-     - Receives global model: wᵗ
-     - Trains on local data Dᵢ
-     - Computes local update: Δwᵢᵗ
-     - Sends update to server (encrypted)
-
-3. **Aggregation**:
-   - Server receives updates: {Δw₁ᵗ, Δw₂ᵗ, ..., Δwₙᵗ}
-   - Aggregates: wᵗ⁺¹ = wᵗ + (1/n) × ΣΔwᵢᵗ
-   - Or weighted average based on data size
-
-4. **Distribution**:
-   - Server sends updated model wᵗ⁺¹ to devices
-   - Repeat for T rounds
-
-#### **Mathematical Formulation**
-
-```
-Given:
+**Given**:
 - N devices with local datasets: D₁, D₂, ..., Dₙ
-- Global model: w
-- Local loss on device i: Lᵢ(w) = (1/|Dᵢ|) Σ l(w, x, y) for (x,y) ∈ Dᵢ
+- Each device i has: D_i = {(xᵢⱼ, yᵢⱼ)}_{j=1}^{|D_i|}
+- Global model parameters: w
 
-Federated Learning Objective:
-Minimize: L(w) = Σ (|Dᵢ|/|D|) × Lᵢ(w)
+**Goal**: Learn global model without sharing raw data
 
-Where |D| = Σ|Dᵢ| is total data size
+#### **Step 2: Local Loss Function**
 
-Federated Averaging:
-wᵗ⁺¹ = Σ (|Dᵢ|/|D|) × wᵢᵗ
-
-Where wᵢᵗ is model trained on device i at round t
+**Loss on device i**:
+```
+L_i(w) = (1/|D_i|) × Σ_{(x,y) ∈ D_i} l(f(x; w), y)
 ```
 
-### 3.4.4 Key Challenges
+**Step-by-step**:
+1. **f(x; w)**: Model prediction with parameters w
+2. **l(f(x; w), y)**: Loss for example (x, y)
+3. **Σ_{(x,y) ∈ D_i}**: Sum over all examples on device i
+4. **1/|D_i|**: Average over device i's examples
+5. **Result**: Average loss on device i's local data
 
-#### **1. Non-IID Data**
+#### **Step 3: Global Objective**
 
-**Problem**:
-- Data on different devices may have different distributions
-- Example: Phone 1 has photos of cats, Phone 2 has photos of dogs
-- Standard averaging may not work well
-
-**Solutions**:
-- Weighted averaging (by data size)
-- Clustered federated learning
-- Personalization techniques
-
-#### **2. Communication Efficiency**
-
-**Problem**:
-- Sending full model updates is expensive
-- Limited bandwidth on mobile devices
-- Need to reduce communication
-
-**Solutions**:
-- Compression (quantization, sparsification)
-- Gradient compression
-- Local training for multiple epochs before sending
-
-#### **3. Privacy & Security**
-
-**Problem**:
-- Model updates might leak information about data
-- Need to protect against inference attacks
-
-**Solutions**:
-- Differential privacy
-- Secure aggregation (homomorphic encryption)
-- Federated learning with secure multiparty computation
-
-#### **4. System Heterogeneity**
-
-**Problem**:
-- Devices have different:
-  - Computational power
-  - Network connectivity
-  - Availability (some devices offline)
-
-**Solutions**:
-- Asynchronous updates
-- Device selection strategies
-- Tolerant to stragglers
-
-### 3.4.5 Privacy Techniques
-
-#### **Differential Privacy**
-
-**Idea**: Add noise to updates to prevent information leakage.
-
+**Federated learning objective**:
 ```
-Δw_noisy = Δw + N(0, σ²)
+L(w) = Σ_{i=1}^N (|D_i|/|D|) × L_i(w)
 ```
 
-- Noise masks individual contributions
-- Privacy-accuracy tradeoff
-- Formal privacy guarantees
+**Step-by-step derivation**:
+1. **|D_i|/|D|**: Weight proportional to device i's data size
+   - |D| = Σ_{i=1}^N |D_i|: Total data size
+   - Larger devices contribute more
+2. **(|D_i|/|D|) × L_i(w)**: Weighted loss from device i
+3. **Σ_{i=1}^N**: Sum over all devices
+4. **Result**: Weighted average of local losses
 
-#### **Secure Aggregation**
+**Expanded form**:
+```
+L(w) = Σ_{i=1}^N (|D_i|/|D|) × (1/|D_i|) × Σ_{(x,y) ∈ D_i} l(f(x; w), y)
+     = (1/|D|) × Σ_{i=1}^N Σ_{(x,y) ∈ D_i} l(f(x; w), y)
+```
 
-**Idea**: Encrypt updates so server can aggregate without seeing individual updates.
+**Step-by-step simplification**:
+1. **(|D_i|/|D|) × (1/|D_i|)**: Cancel |D_i|
+2. **Result**: (1/|D|)
+3. **Σ_{i=1}^N Σ_{(x,y) ∈ D_i}**: Double sum over all devices and all examples
+4. **Result**: Average loss over all data (as if centralized)
 
-- Homomorphic encryption
-- Secure multiparty computation
-- Server computes sum without seeing individual terms
+#### **Step 4: Federated Averaging Algorithm**
 
-### 3.4.6 When to Use Federated Learning
+**Round t**:
 
-**✅ Use When:**
-- Data is distributed across devices/organizations
-- Privacy is critical (can't centralize data)
-- Regulatory compliance required
-- Want to leverage distributed data
-- Have communication infrastructure
+**Step 4a: Server sends global model**
+```
+w^t → devices
+```
 
-**❌ Don't Use When:**
-- Data can be centralized safely
-- Communication costs too high
-- Devices are unreliable
-- Need real-time updates
-- Simple centralized solution sufficient
+**Step 4b: Local training on each device**
+```
+w_i^(t,0) = w^t  (initialize with global model)
 
-### 3.4.7 Advantages & Limitations
+For epoch e = 1 to E:
+  w_i^(t,e) = w_i^(t,e-1) - η × ∇_{w} L_i(w_i^(t,e-1))
+```
 
-#### **Advantages**:
-- ✅ Preserves data privacy
-- ✅ Complies with regulations (GDPR, HIPAA)
-- ✅ Leverages distributed data
-- ✅ Scales to many devices
-- ✅ Reduces central storage needs
+**Step-by-step**:
+1. **w_i^(t,0)**: Initialize device i's model with global model
+2. **E**: Number of local epochs
+3. **∇_{w} L_i(w)**: Gradient of local loss
+4. **Update**: Device i performs E steps of gradient descent
+5. **w_i^(t,E)**: Final local model after E epochs
 
-#### **Limitations**:
-- ❌ Communication overhead
-- ❌ Complex system design
-- ❌ Non-IID data challenges
-- ❌ Slower convergence
-- ❌ Security/privacy tradeoffs
+**Step 4c: Devices send updates**
+```
+Δw_i^t = w_i^(t,E) - w^t  (update = final - initial)
+```
 
-### 3.4.8 Applications
+**Step-by-step**:
+1. **w_i^(t,E)**: Device i's model after local training
+2. **w^t**: Initial global model
+3. **Δw_i^t**: Change made by device i
+4. **Send to server**: Only update is sent, not raw data
 
-**Mobile Devices**:
-- Google Keyboard: Learn from typing on millions of phones
-- Apple Siri: Improve without sending audio to servers
-- Predictive text, autocorrect
+**Step 4d: Server aggregates updates**
+```
+w^(t+1) = w^t + (1/N) × Σ_{i=1}^N Δw_i^t
+```
 
-**Healthcare**:
-- Multiple hospitals train medical AI
-- Patient data stays at hospitals
-- Aggregate knowledge for better models
+**Step-by-step derivation**:
+1. **Δw_i^t**: Update from device i
+2. **Σ_{i=1}^N**: Sum over all devices
+3. **1/N**: Average updates
+4. **w^t + average_update**: Add average update to current global model
+5. **Result**: New global model
 
-**Finance**:
-- Banks collaborate on fraud detection
-- Customer data stays at each bank
-- Shared model improvements
+**Alternative: Weighted averaging**:
+```
+w^(t+1) = w^t + Σ_{i=1}^N (|D_i|/|D|) × Δw_i^t
+```
 
----
+**Step-by-step**:
+1. **|D_i|/|D|**: Weight proportional to data size
+2. **(|D_i|/|D|) × Δw_i^t**: Weighted update
+3. **Σ_{i=1}^N**: Sum weighted updates
+4. **Result**: Devices with more data contribute more
+
+#### **Step 5: Convergence**
+
+**Convergence criterion**:
+```
+||w^(t+1) - w^t|| < ε
+```
+
+**Step-by-step**:
+1. **w^(t+1) - w^t**: Change in global model
+2. **||·||**: L2 norm (magnitude of change)
+3. **ε**: Small threshold
+4. **Convergence**: When model stops changing significantly
 
 ### 3.5 Meta-Learning
 
-### 3.5.1 Intuition & Goal
+### 3.5.1 MAML: Mathematical Derivation
 
-**Goal**: Learn how to learn - develop algorithms that can quickly adapt to new tasks with few examples.
+#### **Step 1: Problem Setup**
 
-**Key Insight**: Learning itself can be learned!
+**Task distribution**: P(T)
 
-**Real-World Analogy**:
-- Expert learner: Someone who quickly masters new skills
-- They've learned "how to learn"
-- Meta-learning: Teach AI to be an expert learner
+**Sample task T ~ P(T)**:
+- Training set: D_T^train = {(x₁, y₁), ..., (xₖ, yₖ)} (few examples)
+- Test set: D_T^test
 
-**The Meta-Problem**:
-- Traditional ML: Learn task T from data D
-- Meta-Learning: Learn learning algorithm A that can quickly learn new tasks
+**Goal**: Learn initialization θ that allows fast adaptation
 
-### 3.5.2 Core Concepts
+#### **Step 2: Inner Loop (Task-Specific Adaptation)**
 
-#### **Learning to Learn**
-
-**Traditional Learning**:
+**For task T, adapt from θ**:
 ```
-Given: Task T, Data D
-Learn: Model f that performs well on T
+θ_T' = θ - α × ∇_θ L_T(θ, D_T^train)
 ```
 
-**Meta-Learning**:
+**Step-by-step derivation**:
+1. **L_T(θ, D_T^train)**: Loss on task T's training data
+   ```
+   L_T(θ, D_T^train) = (1/|D_T^train|) × Σ_{(x,y) ∈ D_T^train} l(f(x; θ), y)
+   ```
+2. **∇_θ L_T(θ, D_T^train)**: Gradient with respect to θ
+3. **α**: Inner learning rate (step size for adaptation)
+4. **θ - α × ∇_θ L_T**: One gradient step from initialization
+5. **θ_T'**: Adapted parameters for task T
+
+**Multiple steps (optional)**:
 ```
-Given: Distribution of tasks P(T)
-Learn: Learning algorithm A that quickly learns new tasks from P(T)
-
-Then: For new task T' ~ P(T), use A to learn quickly
-```
-
-#### **Few-Shot Learning**
-
-**Problem**: Learn new task with very few examples (1-5 examples per class).
-
-**Example**:
-- See 3 examples of "giraffe"
-- Recognize giraffes in new images
-- Human-like learning ability
-
-**Meta-Learning Solution**:
-- Train on many "few-shot learning tasks"
-- Learn to extract useful features quickly
-- Transfer to new few-shot tasks
-
-### 3.5.3 How Meta-Learning Works
-
-#### **General Framework**
-
-1. **Meta-Training**:
-   - Sample many tasks from task distribution
-   - For each task, simulate few-shot learning
-   - Learn learning algorithm that works across tasks
-
-2. **Meta-Testing**:
-   - New task from same distribution
-   - Apply learned learning algorithm
-   - Quickly adapt with few examples
-
-#### **Mathematical Formulation**
-
-```
-Meta-Learning Objective:
-
-Minimize: E_{T ~ P(T)} [L_T(A(D_T^train))]
-
-Where:
-- P(T): Distribution over tasks
-- A: Learning algorithm (meta-learner)
-- D_T^train: Training data for task T
-- L_T: Loss function for task T
-- A(D_T^train): Model learned by algorithm A on task T
-
-Goal: Find A that minimizes expected loss across tasks
+θ_T^(0) = θ
+For step s = 1 to S:
+  θ_T^(s) = θ_T^(s-1) - α × ∇_θ L_T(θ_T^(s-1), D_T^train)
+θ_T' = θ_T^(S)
 ```
 
-### 3.5.4 Key Approaches
+#### **Step 3: Outer Loop (Meta-Learning)**
 
-#### **1. Model-Agnostic Meta-Learning (MAML)**
+**Meta-objective**:
+```
+L_meta(θ) = E_{T ~ P(T)} [L_T(θ_T', D_T^test)]
+```
 
-**Idea**: Learn good initialization that can quickly adapt to new tasks.
+**Step-by-step**:
+1. **θ_T'**: Adapted parameters (from Step 2)
+2. **L_T(θ_T', D_T^test)**: Loss on task T's test data using adapted parameters
+3. **E_{T ~ P(T)}**: Expectation over task distribution
+4. **Result**: Average test loss across tasks
 
-**Process**:
-1. Initialize model parameters: θ
-2. For each task T:
-   - Take few gradient steps: θ' = θ - α∇L_T(θ)
-   - Evaluate on task T
-3. Update initialization: θ ← θ - β∇ΣL_T(θ')
-4. Repeat
+**Monte Carlo approximation**:
+```
+L_meta(θ) ≈ (1/M) × Σ_{i=1}^M L_{T_i}(θ_{T_i}', D_{T_i}^test)
+```
 
-**Key Insight**: Initialization that's "close" to optimal for many tasks.
+**Step-by-step**:
+1. **Sample M tasks**: T₁, T₂, ..., T_M ~ P(T)
+2. **For each task**: Adapt and evaluate
+3. **Average**: Over M tasks
+4. **Result**: Approximate meta-objective
 
-#### **2. Metric-Based Meta-Learning**
+#### **Step 4: Meta-Gradient**
 
-**Idea**: Learn a distance metric for comparing examples.
+**Gradient of meta-objective**:
+```
+∇_θ L_meta(θ) = ∇_θ E_{T ~ P(T)} [L_T(θ_T', D_T^test)]
+```
 
-**Process**:
-1. Learn embedding function: f(x)
-2. For new task:
-   - Embed support examples (few labeled)
-   - Embed query example
-   - Find nearest support example
-   - Predict same label
+**Step-by-step derivation**:
+1. **θ_T' = θ - α × ∇_θ L_T(θ, D_T^train)**: Depends on θ
+2. **Chain rule**:
+   ```
+   ∇_θ L_T(θ_T', D_T^test) = (∂L_T/∂θ_T') × (∂θ_T'/∂θ)
+   ```
+3. **∂θ_T'/∂θ**: How adapted parameters depend on initialization
+   ```
+   ∂θ_T'/∂θ = I - α × ∇_θ² L_T(θ, D_T^train)
+   ```
+   - **I**: Identity matrix
+   - **∇_θ² L_T**: Hessian (second derivative)
+4. **Result**: Meta-gradient requires second-order derivatives
 
-**Example - Siamese Networks**:
-- Learn to compare pairs of images
-- "Are these the same class?"
-- Use for few-shot classification
+**First-order approximation** (simpler):
+```
+∇_θ L_meta(θ) ≈ (1/M) × Σ_{i=1}^M ∇_θ L_{T_i}(θ_{T_i}', D_{T_i}^test)
+```
 
-#### **3. Optimization-Based Meta-Learning**
+**Step-by-step**:
+1. **Approximate**: Ignore second-order terms
+2. **∇_θ L_{T_i}(θ_{T_i}', D_{T_i}^test)**: Gradient treating θ_T' as constant
+3. **Average**: Over tasks
+4. **Result**: Simpler but less accurate
 
-**Idea**: Learn optimization algorithm itself.
+#### **Step 5: Meta-Update**
 
-**Process**:
-1. Meta-learner learns update rule
-2. Instead of standard gradient descent, use learned optimizer
-3. Optimizer adapts to task quickly
+**Update initialization**:
+```
+θ^(t+1) = θ^(t) - β × ∇_θ L_meta(θ^(t))
+```
 
-#### **4. Memory-Augmented Meta-Learning**
+**Step-by-step**:
+1. **∇_θ L_meta(θ^(t))**: Meta-gradient
+2. **β**: Meta learning rate (outer loop step size)
+3. **θ^(t+1)**: Updated initialization
+4. **Result**: Initialization that allows fast adaptation
 
-**Idea**: Use external memory to store and retrieve task-specific information.
-
-**Process**:
-1. Model has memory bank
-2. For new task, store key examples in memory
-3. Retrieve relevant memories for prediction
-4. Learn what to store and how to retrieve
-
-### 3.5.5 Ensemble Methods as Meta-Learning
-
-#### **Connection to Ensemble Learning**
-
-**Ensemble Learning**:
-- Combine multiple models
-- Learn from diversity
-- Meta-level: How to combine models?
-
-**Meta-Learning Perspective**:
-- Each model is a "learner"
-- Meta-learner learns how to combine them
-- Learning to learn from multiple sources
-
-#### **Example - Random Forest**:
-- Multiple decision trees (base learners)
-- Voting mechanism (meta-learner)
-- Learns how to aggregate predictions
-
-### 3.5.6 When to Use Meta-Learning
-
-**✅ Use When:**
-- Need to quickly adapt to new tasks
-- Have many related tasks available
-- Few-shot learning required
-- Transfer learning insufficient
-- Want learning efficiency
-
-**❌ Don't Use When:**
-- Single task with sufficient data
-- Tasks are very different
-- Computational resources limited
-- Simple transfer learning works
-- Don't need fast adaptation
-
-### 3.5.7 Advantages & Limitations
-
-#### **Advantages**:
-- ✅ Fast adaptation to new tasks
-- ✅ Few-shot learning capability
-- ✅ Generalizes learning strategies
-- ✅ Human-like learning efficiency
-- ✅ Foundation for advanced AI
-
-#### **Limitations**:
-- ❌ Requires many related tasks
-- ❌ Computationally expensive
-- ❌ Complex to implement
-- ❌ May not transfer to very different tasks
-- ❌ Still active research area
-
-### 3.5.8 Applications
-
-**Few-Shot Image Classification**:
-- Recognize new object classes from few examples
-- Rapid prototyping
-
-**Robotics**:
-- Quickly adapt to new environments
-- Learn new manipulation tasks fast
-
-**Natural Language Processing**:
-- Adapt to new languages or domains
-- Few-shot text classification
+**Complete algorithm**:
+```
+Initialize: θ^(0)
+For meta-iteration t = 1 to T:
+  Sample tasks: T₁, ..., T_M ~ P(T)
+  For each task T_i:
+    Adapt: θ_{T_i}' = θ^(t) - α × ∇_θ L_{T_i}(θ^(t), D_{T_i}^train)
+    Evaluate: L_i = L_{T_i}(θ_{T_i}', D_{T_i}^test)
+  Meta-update: θ^(t+1) = θ^(t) - β × (1/M) × Σ_{i=1}^M ∇_θ L_i
+```
 
 ---
 
@@ -1532,40 +1539,15 @@ Goal: Find A that minimizes expected loss across tasks
 | **Federated Learning** | Distributed data | Privacy preservation | Decentralized settings |
 | **Meta-Learning** | Many related tasks | Fast adaptation | Few-shot learning |
 
-### 4.2 When to Combine Paradigms
+### 4.2 Integration Strategies
 
-#### **Semi-Supervised + Active Learning**
+**Semi-Supervised + Active Learning**:
 - Use active learning to select which unlabeled examples to label
 - Combine strategic selection with unlabeled data leverage
-- Most efficient use of labeling budget
 
-#### **Self-Supervised + Transfer Learning**
+**Self-Supervised + Transfer Learning**:
 - Pre-train with self-supervision (no labels)
 - Fine-tune on target task (few labels)
-- Common in modern NLP and vision
-
-#### **Federated + Transfer Learning**
-- Pre-train model centrally (if possible)
-- Fine-tune in federated setting
-- Leverage both knowledge transfer and privacy
-
-#### **Meta-Learning + Few-Shot Active Learning**
-- Meta-learn to quickly adapt
-- Use active learning to select examples
-- Most efficient few-shot learning
-
-### 4.3 Integration Strategies
-
-**Hierarchical Approach**:
-1. Self-supervised pre-training (no labels)
-2. Transfer to target domain (few labels)
-3. Active learning for remaining labels
-4. Semi-supervised with unlabeled data
-
-**Parallel Approach**:
-- Multiple paradigms simultaneously
-- Ensemble their predictions
-- Leverage complementary strengths
 
 ---
 
@@ -1573,174 +1555,52 @@ Goal: Find A that minimizes expected loss across tasks
 
 ### 5.1 Choosing the Right Paradigm
 
-#### **Decision Tree**
+**Decision Tree**:
+- Limited labels? → Semi-Supervised or Active Learning
+- Large unlabeled data? → Self-Supervised
+- Related source task? → Transfer Learning
+- Privacy critical? → Federated Learning
+- Need fast adaptation? → Meta-Learning
 
-```
-Do you have labeled data?
-├─ Yes, sufficient → Supervised Learning
-└─ No / Limited
-   ├─ Large unlabeled data?
-   │  ├─ Yes → Self-Supervised or Semi-Supervised
-   │  └─ No → Active Learning
-   │
-   ├─ Related source task?
-   │  └─ Yes → Transfer Learning
-   │
-   ├─ Data distributed, privacy critical?
-   │  └─ Yes → Federated Learning
-   │
-   ├─ Need fast adaptation to new tasks?
-   │  └─ Yes → Meta-Learning
-   │
-   └─ Multiple views/models available?
-      └─ Yes → Multi-Model Learning
-```
+### 5.2 Real-World Applications
 
-### 5.2 Common Workflows
+**Healthcare**: Federated learning across hospitals, transfer learning from general to medical images
 
-#### **Modern NLP Pipeline**
+**NLP**: Self-supervised pre-training (GPT, BERT), transfer to specific domains
 
-1. **Self-Supervised Pre-training**:
-   - Train GPT/BERT on large text corpus
-   - Masked language modeling
-   - No human labels needed
-
-2. **Transfer Learning**:
-   - Fine-tune on target task (sentiment, QA)
-   - Small labeled dataset
-   - Adapts to specific domain
-
-3. **Active Learning (Optional)**:
-   - Select uncertain examples
-   - Human annotator labels
-   - Iteratively improve
-
-#### **Medical Imaging Pipeline**
-
-1. **Transfer Learning**:
-   - Pre-train on ImageNet (natural images)
-   - Transfer to medical domain
-
-2. **Federated Learning**:
-   - Train across hospitals
-   - Patient data stays local
-   - Aggregate model updates
-
-3. **Semi-Supervised**:
-   - Use unlabeled medical images
-   - Leverage structure in data
-
-### 5.3 Best Practices
-
-#### **Data Considerations**
-- ✅ Ensure data quality and consistency
-- ✅ Verify distribution assumptions
-- ✅ Handle domain shift carefully
-- ✅ Consider privacy and ethics
-
-#### **Model Considerations**
-- ✅ Start with simple baselines
-- ✅ Monitor for overfitting
-- ✅ Use appropriate evaluation metrics
-- ✅ Consider computational constraints
-
-#### **Implementation Considerations**
-- ✅ Design good query strategies (active learning)
-- ✅ Choose appropriate transfer approach
-- ✅ Handle communication efficiently (federated)
-- ✅ Balance privacy and performance
-
-### 5.4 Real-World Applications
-
-**Healthcare**:
-- Federated learning across hospitals
-- Transfer learning from general to medical images
-- Active learning for rare disease diagnosis
-
-**Natural Language Processing**:
-- Self-supervised pre-training (GPT, BERT)
-- Transfer to specific domains
-- Few-shot learning for new languages
-
-**Autonomous Vehicles**:
-- Transfer learning from simulation to real world
-- Federated learning across vehicle fleets
-- Active learning for edge cases
-
-**Finance**:
-- Federated learning across banks
-- Transfer learning for fraud detection
-- Semi-supervised for transaction classification
+**Autonomous Vehicles**: Transfer from simulation to real world, federated learning across fleets
 
 ---
 
 ## Summary: Key Takeaways
 
-### Advanced Learning Paradigms Essentials
+### Mathematical Foundations
 
-1. **Semi-Supervised Learning**:
-   - Combines labeled and unlabeled data
-   - Models teach each other (co-training, self-training)
-   - Reduces labeling cost
-   - Assumes data structure (smoothness, clusters)
-
-2. **Self-Supervised Learning**:
-   - Creates supervision from data structure
-   - GPT: Mask words, predict/fill blanks
-   - Learns general representations
-   - Foundation for modern AI
-
-3. **Multi-Model Learning**:
-   - Multiple models on different views/subsets
-   - Models collaborate and teach each other
-   - Majority voting for predictions
-   - Leverages model diversity
-
-4. **Active Learning**:
-   - Model queries oracle for uncertain points
-   - Strategic data selection
-   - Minimizes labeling cost
-   - Interactive learning loop
-
-5. **Transfer Learning**:
-   - Pre-trained model adapted to new task
-   - Leverages knowledge from source task
-   - Common in NLP and computer vision
-   - Reduces need for target labels
-
-6. **Federated Learning**:
-   - Train on local devices
-   - Aggregate encrypted updates
-   - Preserves privacy
-   - Distributed learning
-
-7. **Meta-Learning**:
-   - Learning to learn
-   - Fast adaptation to new tasks
-   - Few-shot learning capability
-   - Foundation for advanced AI
+1. **Semi-Supervised**: Combined loss = supervised + λ × unsupervised (consistency)
+2. **Self-Supervised**: Masked language modeling, contrastive learning, autoencoding
+3. **Active Learning**: Uncertainty measures (entropy, margin, least confident)
+4. **Transfer Learning**: L_target = L_supervised + λ × L_transfer
+5. **Federated Learning**: Weighted averaging of local updates
+6. **Meta-Learning**: Learn initialization for fast adaptation (MAML)
 
 ### Key Principles
 
 - **Leverage Unlabeled Data**: Semi-supervised and self-supervised learning
 - **Strategic Labeling**: Active learning minimizes cost
-- **Knowledge Transfer**: Transfer learning reuses learned representations
+- **Knowledge Transfer**: Transfer learning reuses representations
 - **Privacy Preservation**: Federated learning keeps data local
 - **Learning Efficiency**: Meta-learning enables fast adaptation
-- **Model Diversity**: Multi-model learning combines strengths
-
-### When to Use Each
-
-- **Limited Labels**: Semi-supervised, Active Learning, Transfer Learning
-- **No Labels**: Self-Supervised Learning
-- **Privacy Critical**: Federated Learning
-- **Fast Adaptation**: Meta-Learning
-- **Multiple Views**: Multi-Model Learning
-- **Related Tasks**: Transfer Learning
 
 ---
 
 ## Practice Problems & Exercises
+
+### Mathematical Derivations
+
+1. **Derive the gradient of contrastive loss** with respect to anchor representation
+2. **Show that federated averaging** minimizes global objective
+3. **Prove that MAML meta-gradient** requires second-order derivatives
+4. **Calculate information gain** when adding pseudo-labels in semi-supervised learning
 
 ### Conceptual Questions
 
@@ -1748,52 +1608,10 @@ Do you have labeled data?
 2. **Why does co-training require independent feature views?**
 3. **How does active learning reduce labeling cost?**
 4. **When would transfer learning hurt performance (negative transfer)?**
-5. **What are the main challenges in federated learning?**
-6. **How does meta-learning enable few-shot learning?**
-7. **When would you combine multiple paradigms?**
-
-### Practical Exercises
-
-1. **Implement Self-Training**:
-   - Start with 100 labeled examples
-   - Use 10,000 unlabeled examples
-   - Iteratively add high-confidence predictions
-   - Compare to supervised-only baseline
-
-2. **Design Active Learning Strategy**:
-   - Implement uncertainty sampling
-   - Compare to random sampling
-   - Measure labels needed to reach target accuracy
-
-3. **Transfer Learning Experiment**:
-   - Pre-train on ImageNet
-   - Fine-tune on medical images
-   - Compare to training from scratch
-   - Measure data efficiency
-
-4. **Federated Learning Simulation**:
-   - Simulate 10 devices with local data
-   - Implement federated averaging
-   - Compare to centralized training
-   - Analyze communication cost
-
-5. **Meta-Learning for Few-Shot**:
-   - Implement MAML
-   - Train on many few-shot tasks
-   - Test on new few-shot task
-   - Compare adaptation speed
-
-### Advanced Questions
-
-1. **How would you combine semi-supervised and active learning?**
-2. **What privacy guarantees does federated learning provide?**
-3. **How does self-supervised pre-training help transfer learning?**
-4. **When does meta-learning outperform transfer learning?**
-5. **How to handle non-IID data in federated learning?**
 
 ---
 
 **End of Advanced Learning Paradigms Guide**
 
-*This comprehensive guide covers semi-supervised learning, self-supervised learning, and other advanced learning paradigms from your course materials, providing intuitive explanations, mathematical foundations, and practical insights for each approach.*
+*This comprehensive guide includes detailed step-by-step mathematical derivations with explanations for each equation, covering semi-supervised learning, self-supervised learning, and other advanced learning paradigms.*
 
