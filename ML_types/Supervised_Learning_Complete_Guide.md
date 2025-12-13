@@ -1,6 +1,6 @@
 # Supervised Learning: Complete Guide from Scratch to Pro
 **Topic 2.1: Supervised Learning**  
-*Comprehensive guide covering all topics from flipped class, class notes, and slides*
+*Comprehensive guide with complete mathematical derivations - every step explained*
 
 ---
 
@@ -23,7 +23,7 @@
 ### 1.1 What is Supervised Learning?
 
 **Definition:**
-Supervised learning uses labeled data (categorical or numerical) to learn a mapping function from inputs (features) to outputs (labels). The "supervision" comes from having the correct answers during training.
+Supervised learning uses labeled data (categorical or numerical) to learn a mapping function from inputs (features) to outputs (labels).
 
 **Core Relationship:**
 ```
@@ -39,51 +39,11 @@ Where:
 
 #### **Classification: Predict Categorical Labels**
 - **Goal**: Assign input to one of several discrete categories
-- **Examples**: 
-  - Email spam detection (spam/not spam)
-  - Medical diagnosis (disease/no disease)
-  - Image recognition (cat/dog/bird)
 - **Output**: Discrete class labels
 
 #### **Regression: Predict Continuous Values**
 - **Goal**: Predict a continuous numerical value
-- **Examples**:
-  - House price prediction
-  - Temperature forecasting
-  - Stock price prediction
 - **Output**: Continuous real numbers
-
-### 1.3 The Learning Process
-
-**Step-by-Step:**
-
-1. **Data Collection**: Gather labeled examples (X, Y pairs)
-2. **Data Splitting**: 
-   - **Training Set** (75%): Learn the model
-   - **Validation Set**: Tune hyperparameters
-   - **Test Set** (25%): Final evaluation (unseen data)
-3. **Model Selection**: Choose appropriate algorithm
-4. **Training**: Learn parameters from training data
-5. **Evaluation**: Test on unseen data
-6. **Deployment**: Use model for predictions
-
-**Critical Rule**: Test data must NEVER influence training (no data leakage!)
-
-### 1.4 Key Concepts
-
-**Features (X):**
-- Each feature is a dimension in feature space
-- Features represented as vectors: [x₁, x₂, ..., xₙ]
-- 2D = line, 3D = plane, nD = hypersurface
-
-**Labels (Y):**
-- Classification: Categorical (e.g., 0/1, red/blue/green)
-- Regression: Continuous (e.g., 25.7, 100.3)
-
-**Model:**
-- Mathematical function that maps X → Y
-- Parameters learned from data
-- Should generalize to new, unseen data
 
 ---
 
@@ -93,112 +53,228 @@ Where:
 
 **Goal**: Find the best straight line (or hyperplane) that fits the data to predict continuous values.
 
-**Real-World Analogy**: 
-- You want to predict a student's university GPA from their high school GPA
-- You plot points and draw the best line through them
-- That line becomes your prediction model
-
 ### 2.2 Mathematical Foundation
 
 #### **Simple Linear Regression (1 feature)**
 ```
 Y = wX + b
 ```
-Where:
-- **Y**: Predicted output (continuous)
-- **X**: Input feature
-- **w**: Weight (slope) - how much Y changes per unit change in X
-- **b**: Bias (intercept) - value of Y when X = 0
 
 #### **Multiple Linear Regression (p features)**
 ```
 Y = β₀ + β₁X₁ + β₂X₂ + ... + βₚXₚ + ε
 ```
-Where:
-- **β₀**: Intercept (average Y when all X's are zero)
-- **βⱼ**: Slope for jth variable (average increase in Y when Xⱼ increases by 1)
-- **ε**: Error term (random noise)
 
 **Vector Form:**
 ```
-Y = w·x + b
+Y = w·x + b = w₁x₁ + w₂x₂ + ... + wₚxₚ + b
 ```
-Where w·x is the dot product: w₁x₁ + w₂x₂ + ... + wₚxₚ
 
-### 2.3 How It Works: The Learning Process
+### 2.3 Complete Derivation: Mean Squared Error Loss
 
-#### **Step 1: Define the Model**
-Choose the form: Y = wX + b (or multiple features)
+#### **Step 1: Define the Loss Function**
 
-#### **Step 2: Define the Objective (Loss Function)**
-We need to measure how "wrong" our predictions are.
+For n training examples, we want to minimize the prediction error:
 
-**Mean Squared Error (MSE):**
 ```
-MSE = (1/n) Σ(yᵢ - ŷᵢ)²
+L(w, b) = (1/n) Σᵢ₌₁ⁿ (yᵢ - ŷᵢ)²
 ```
-Where:
-- **yᵢ**: Actual value
-- **ŷᵢ**: Predicted value (w·xᵢ + b)
-- **n**: Number of training examples
 
-**Why Squared Error?**
-- Penalizes large errors more than small ones
-- Mathematically convenient (differentiable)
+**Explanation**: 
+- We sum squared differences between actual (yᵢ) and predicted (ŷᵢ) values
+- Divide by n to get average (mean)
+- Squaring ensures positive values and penalizes large errors more
+
+**Substitute prediction formula**:
+```
+ŷᵢ = w·xᵢ + b = w₁xᵢ₁ + w₂xᵢ₂ + ... + wₚxᵢₚ + b
+```
+
+**Therefore**:
+```
+L(w, b) = (1/n) Σᵢ₌₁ⁿ (yᵢ - (w·xᵢ + b))²
+```
+
+**Why squared error?**
+- Mathematically convenient (differentiable everywhere)
 - Under Gaussian noise assumption, maximizing likelihood = minimizing MSE
+- Penalizes large errors more than small ones
 
-#### **Step 3: Find Optimal Parameters**
-**Goal**: Find w and b that minimize MSE
+### 2.4 Complete Derivation: Closed-Form Solution (Simple Case)
 
-**Mathematical Solution (Closed Form):**
-For simple linear regression:
+#### **For Simple Linear Regression (1 feature): Y = wX + b**
+
+**Step 1: Expand the Loss Function**
+
 ```
-w = Σ(xᵢ - x̄)(yᵢ - ȳ) / Σ(xᵢ - x̄)²
+L(w, b) = (1/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)²
+```
+
+**Step 2: Take Partial Derivatives**
+
+To find minimum, set derivatives to zero:
+
+**Partial derivative with respect to w:**
+```
+∂L/∂w = (1/n) Σᵢ₌₁ⁿ 2(yᵢ - w·xᵢ - b)(-xᵢ)
+      = -(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)·xᵢ
+```
+
+**Explanation**: 
+- Chain rule: derivative of (u)² is 2u·(du/dw)
+- Here u = (yᵢ - w·xᵢ - b), so du/dw = -xᵢ
+- The negative sign comes from the derivative of -w·xᵢ with respect to w
+
+**Partial derivative with respect to b:**
+```
+∂L/∂b = (1/n) Σᵢ₌₁ⁿ 2(yᵢ - w·xᵢ - b)(-1)
+      = -(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)
+```
+
+**Explanation**:
+- Similar chain rule, but derivative of -b with respect to b is -1
+
+**Step 3: Set Derivatives to Zero**
+
+**For w:**
+```
+∂L/∂w = 0
+-(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)·xᵢ = 0
+```
+
+**Multiply both sides by -n/2:**
+```
+Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)·xᵢ = 0
+```
+
+**Expand:**
+```
+Σᵢ₌₁ⁿ yᵢ·xᵢ - w·Σᵢ₌₁ⁿ xᵢ² - b·Σᵢ₌₁ⁿ xᵢ = 0
+```
+
+**For b:**
+```
+∂L/∂b = 0
+-(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b) = 0
+```
+
+**Multiply both sides by -n/2:**
+```
+Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b) = 0
+```
+
+**Expand:**
+```
+Σᵢ₌₁ⁿ yᵢ - w·Σᵢ₌₁ⁿ xᵢ - n·b = 0
+```
+
+**Step 4: Solve the System of Equations**
+
+**From the b equation:**
+```
+b = (1/n)(Σᵢ₌₁ⁿ yᵢ - w·Σᵢ₌₁ⁿ xᵢ)
 b = ȳ - w·x̄
 ```
 
-**Intuition**: 
-- w measures how X and Y co-vary
-- b adjusts the line up/down to pass through the mean
+**Explanation**:
+- ȳ = (1/n)Σyᵢ (mean of y)
+- x̄ = (1/n)Σxᵢ (mean of x)
+- This shows b centers the line at the mean point
 
-**Gradient Descent Approach** (for complex cases):
-- Start with random w, b
-- Calculate gradient (slope) of loss function
-- Move in direction that reduces loss
-- Repeat until convergence
+**Substitute into w equation:**
+```
+Σᵢ₌₁ⁿ yᵢ·xᵢ - w·Σᵢ₌₁ⁿ xᵢ² - (ȳ - w·x̄)·Σᵢ₌₁ⁿ xᵢ = 0
+```
 
-### 2.4 Parameters Explained
+**Expand the last term:**
+```
+Σᵢ₌₁ⁿ yᵢ·xᵢ - w·Σᵢ₌₁ⁿ xᵢ² - ȳ·Σᵢ₌₁ⁿ xᵢ + w·x̄·Σᵢ₌₁ⁿ xᵢ = 0
+```
 
-**Weight (w or β):**
-- **Interpretation**: Rate of change
-- **Greater |w|**: Feature has more influence
-- **Positive w**: Y increases as X increases
-- **Negative w**: Y decreases as X increases
+**Note**: x̄·Σxᵢ = (1/n)Σxᵢ · Σxᵢ = (1/n)(Σxᵢ)²
 
-**Bias (b or β₀):**
-- **Interpretation**: Baseline value
-- Shifts the line up or down
-- Average Y when all features are zero
+**Rearrange to isolate w:**
+```
+w·(Σᵢ₌₁ⁿ xᵢ² - (1/n)(Σᵢ₌₁ⁿ xᵢ)²) = Σᵢ₌₁ⁿ yᵢ·xᵢ - ȳ·Σᵢ₌₁ⁿ xᵢ
+```
 
-### 2.5 When to Use Linear Regression
+**Step 5: Final Formula**
 
-**✅ Use When:**
-- Relationship between features and target is approximately linear
-- You need interpretable results
-- Data is relatively clean
-- You want a simple baseline model
+**For w:**
+```
+w = [Σᵢ₌₁ⁿ yᵢ·xᵢ - ȳ·Σᵢ₌₁ⁿ xᵢ] / [Σᵢ₌₁ⁿ xᵢ² - (1/n)(Σᵢ₌₁ⁿ xᵢ)²]
+```
 
-**❌ Don't Use When:**
-- Relationship is clearly non-linear (e.g., exponential, polynomial)
-- Example: Income vs. education and seniority (often non-linear)
-- **Wrong model → bad predictions!**
+**Alternative form using covariance and variance:**
+```
+w = Cov(X, Y) / Var(X) = Σ(xᵢ - x̄)(yᵢ - ȳ) / Σ(xᵢ - x̄)²
+```
 
-### 2.6 Limitations
+**Explanation**:
+- Numerator: Covariance between X and Y (how they vary together)
+- Denominator: Variance of X (spread of X values)
+- Slope = how much Y changes per unit change in X
 
-- Assumes linear relationship
-- Sensitive to outliers
-- Assumes features are independent
-- Can't capture interactions without feature engineering
+**For b:**
+```
+b = ȳ - w·x̄
+```
+
+**Geometric interpretation**: Line passes through the mean point (x̄, ȳ)
+
+### 2.5 Gradient Descent Derivation for Linear Regression
+
+#### **Step 1: Loss Function**
+```
+L(w, b) = (1/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)²
+```
+
+#### **Step 2: Compute Gradients**
+
+**Gradient with respect to w:**
+```
+∂L/∂w = (1/n) Σᵢ₌₁ⁿ 2(yᵢ - w·xᵢ - b)(-xᵢ)
+      = -(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)·xᵢ
+```
+
+**Explanation**:
+- Apply chain rule: d/dw[(yᵢ - w·xᵢ - b)²]
+- = 2(yᵢ - w·xᵢ - b) × d/dw(yᵢ - w·xᵢ - b)
+- = 2(yᵢ - w·xᵢ - b) × (-xᵢ)
+- Sum over all examples and average
+
+**Gradient with respect to b:**
+```
+∂L/∂b = (1/n) Σᵢ₌₁ⁿ 2(yᵢ - w·xᵢ - b)(-1)
+      = -(2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)
+```
+
+**Explanation**:
+- Similar process, but d/db(-b) = -1
+
+#### **Step 3: Update Rules**
+
+**Gradient descent update:**
+```
+w = w - η × (∂L/∂w)
+b = b - η × (∂L/∂b)
+```
+
+**Substitute gradients:**
+```
+w = w + η × (2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)·xᵢ
+b = b + η × (2/n) Σᵢ₌₁ⁿ (yᵢ - w·xᵢ - b)
+```
+
+**Explanation**:
+- Move in opposite direction of gradient (negative gradient = descent)
+- η (eta) is learning rate (step size)
+- Factor of 2 often absorbed into learning rate
+
+**Why this works**:
+- If gradient is positive, w is too large → decrease w
+- If gradient is negative, w is too small → increase w
+- Repeats until gradient ≈ 0 (minimum reached)
 
 ---
 
@@ -206,156 +282,276 @@ b = ȳ - w·x̄
 
 ### 3.1 Intuition & Goal
 
-**Goal**: Predict probability that an instance belongs to a class (classification).
+**Goal**: Predict probability that an instance belongs to a class.
 
-**Key Insight**: Despite the name "regression," this is a **classification** method!
+### 3.2 Complete Derivation: From Linear to Probability
 
-**Real-World Analogy**:
-- You want to predict if an email is spam
-- Instead of a continuous value, you want a probability: "80% chance this is spam"
-- If probability > 0.5 → classify as spam, else → not spam
+#### **Step 1: Start with Linear Combination**
 
-### 3.2 Why Not Use Linear Regression for Classification?
+We want to model: log-odds = w·x + b
 
-**Problem**: Linear regression outputs can be any real number (-∞ to +∞)
-- But probabilities must be between 0 and 1
-- We need to "squash" the output into [0, 1] range
+**Why log-odds?**
+- Probabilities are bounded [0, 1]
+- Log-odds can be any real number (-∞ to +∞)
+- Can use linear model on log-odds space
 
-**Solution**: Use a sigmoid (S-shaped) function!
+#### **Step 2: Define Log-Odds**
 
-### 3.3 Mathematical Foundation
-
-#### **The Sigmoid Function**
-```
-σ(z) = 1 / (1 + e^(-z))
-```
-Where z = w·x + b (linear combination)
-
-**Properties**:
-- Output always between 0 and 1
-- S-shaped curve
-- Smooth and differentiable
-- Symmetric around z = 0
-
-**Visualization**:
-- When z → +∞: σ(z) → 1
-- When z → -∞: σ(z) → 0
-- When z = 0: σ(z) = 0.5
-
-#### **Logistic Regression Model**
-```
-P(Y=1|X) = 1 / (1 + e^(-(w·x + b)))
-```
-
-**Interpretation**:
-- Output is probability that Y = 1 given X
-- If P(Y=1|X) > 0.5 → predict class 1
-- If P(Y=1|X) ≤ 0.5 → predict class 0
-
-### 3.4 Probability Foundation: Why Sigmoid?
-
-#### **From Odds to Probability**
-
-**Odds**: Ratio of probability of event to probability of non-event
+**Odds**: Ratio of probability to its complement
 ```
 Odds = P / (1-P)
 ```
 
-**Log-Odds (Logit)**: Natural logarithm of odds
+**Log-Odds (Logit)**:
 ```
 log-odds = log(P / (1-P))
 ```
 
-**Key Insight**: Log-odds can be any real number!
-- We model: log-odds = w·x + b (linear!)
-- Then invert to get probability: P = 1 / (1 + e^(-(w·x + b)))
+**Properties**:
+- When P = 0.5: log-odds = log(1) = 0
+- When P → 1: log-odds → +∞
+- When P → 0: log-odds → -∞
 
-**Why This Works**:
-- Linear regression on log-odds space
-- Sigmoid transforms back to probability space
-- Elegant connection between linear and probability models
+#### **Step 3: Model Log-Odds Linearly**
 
-### 3.5 How It Works: The Learning Process
-
-#### **Step 1: Define the Model**
 ```
-P(Y=1|X) = σ(w·x + b) = 1 / (1 + e^(-(w·x + b)))
+log(P / (1-P)) = w·x + b
 ```
 
-#### **Step 2: Define the Loss Function**
+**Explanation**: We model log-odds as a linear function of features
 
-**Log Loss (Cross-Entropy Loss)**:
+#### **Step 4: Solve for Probability P**
+
+**Exponentiate both sides:**
 ```
-L = -[y·log(ŷ) + (1-y)·log(1-ŷ)]
+P / (1-P) = e^(w·x + b)
+```
+
+**Explanation**: e^log(a) = a, so e^log(P/(1-P)) = P/(1-P)
+
+**Solve for P:**
+```
+P = (1-P) × e^(w·x + b)
+P = e^(w·x + b) - P × e^(w·x + b)
+P + P × e^(w·x + b) = e^(w·x + b)
+P(1 + e^(w·x + b)) = e^(w·x + b)
+```
+
+**Final step:**
+```
+P = e^(w·x + b) / (1 + e^(w·x + b))
+```
+
+**Multiply numerator and denominator by e^-(w·x + b):**
+```
+P = [e^(w·x + b) × e^-(w·x + b)] / [(1 + e^(w·x + b)) × e^-(w·x + b)]
+P = 1 / [e^-(w·x + b) + 1]
+P = 1 / (1 + e^-(w·x + b))
+```
+
+**This is the sigmoid function!**
+
+#### **Step 5: Sigmoid Function**
+
+```
+σ(z) = 1 / (1 + e^(-z))
+```
+
+Where z = w·x + b
+
+**Properties**:
+- σ(0) = 1/2 = 0.5
+- σ(z) → 1 as z → +∞
+- σ(z) → 0 as z → -∞
+- S-shaped curve
+- Always between 0 and 1
+
+### 3.3 Complete Derivation: Maximum Likelihood Estimation
+
+#### **Step 1: Likelihood Function**
+
+For binary classification, each example follows Bernoulli distribution:
+```
+P(yᵢ|xᵢ) = pᵢ^yᵢ × (1-pᵢ)^(1-yᵢ)
 ```
 
 Where:
-- **y**: Actual label (0 or 1)
-- **ŷ**: Predicted probability P(Y=1|X)
+- pᵢ = P(Y=1|xᵢ) = σ(w·xᵢ + b)
+- yᵢ ∈ {0, 1}
 
-**Why This Loss?**
-- Penalizes confident wrong predictions heavily
-- When y=1 and ŷ→0: loss → ∞
-- When y=0 and ŷ→1: loss → ∞
-- When prediction is correct: loss → 0
+**Explanation**:
+- If yᵢ = 1: P = pᵢ¹ × (1-pᵢ)⁰ = pᵢ
+- If yᵢ = 0: P = pᵢ⁰ × (1-pᵢ)¹ = 1-pᵢ
+- This compact form handles both cases
 
-**For Multiple Examples**:
+#### **Step 2: Joint Likelihood**
+
+For n independent examples:
 ```
-L = -(1/n) Σ[yᵢ·log(ŷᵢ) + (1-yᵢ)·log(1-ŷᵢ)]
-```
-
-#### **Step 3: Find Optimal Parameters**
-
-**Maximum Likelihood Estimation (MLE)**:
-- Find w, b that maximize probability of observed data
-- Equivalent to minimizing log loss
-
-**Gradient Descent**:
-```
-wⱼ = wⱼ - η × (∂L/∂wⱼ)
-b = b - η × (∂L/∂b)
+L(w, b) = Πᵢ₌₁ⁿ pᵢ^yᵢ × (1-pᵢ)^(1-yᵢ)
 ```
 
-Where η (eta) is the learning rate.
+**Explanation**: Multiply probabilities (assuming independence)
 
-### 3.6 Parameters Explained
+#### **Step 3: Log-Likelihood**
 
-**Weight (w)**:
-- **Effect**: Stretches/tilts the sigmoid curve
-- **Large |w|**: Steeper curve, more confident predictions
-- **Small |w|**: Gentle curve, less confident
-- **Warning**: Very large weights can cause overfitting
+**Take logarithm** (converts product to sum, easier to optimize):
+```
+log L(w, b) = Σᵢ₌₁ⁿ log[pᵢ^yᵢ × (1-pᵢ)^(1-yᵢ)]
+            = Σᵢ₌₁ⁿ [yᵢ·log(pᵢ) + (1-yᵢ)·log(1-pᵢ)]
+```
 
-**Bias (b)**:
-- **Effect**: Shifts curve left/right
-- **Positive b**: Shifts right, increases baseline probability
-- **Negative b**: Shifts left, decreases baseline probability
+**Explanation**:
+- log(ab) = log(a) + log(b)
+- log(a^b) = b·log(a)
+- Expand: log[p^y × (1-p)^(1-y)] = y·log(p) + (1-y)·log(1-p)
 
-### 3.7 Multi-Class Classification
+#### **Step 4: Substitute Sigmoid**
 
-**One-vs-All (OVA)**:
-- Train K binary classifiers (one per class)
-- Each predicts "this class" vs "all others"
-- Choose class with highest probability
+**Recall**: pᵢ = σ(zᵢ) = 1 / (1 + e^(-zᵢ)) where zᵢ = w·xᵢ + b
 
-**Softmax Extension**:
-- Generalize sigmoid to multiple classes
-- Output: probability distribution over all classes
-- Probabilities sum to 1
+**Also**: 1 - pᵢ = 1 - 1/(1+e^(-zᵢ)) = e^(-zᵢ)/(1+e^(-zᵢ)) = 1/(1+e^(zᵢ))
 
-### 3.8 When to Use Logistic Regression
+**Therefore**:
+```
+log L(w, b) = Σᵢ₌₁ⁿ [yᵢ·log(σ(zᵢ)) + (1-yᵢ)·log(1-σ(zᵢ))]
+```
 
-**✅ Use When:**
-- Binary or multi-class classification
-- Need interpretable probabilities
-- Features are approximately linearly separable
-- Tabular data (can outperform deep learning!)
-- Want fast, simple model
+#### **Step 5: Simplify Using Sigmoid Properties**
 
-**❌ Don't Use When:**
-- Complex non-linear decision boundaries needed
-- Very high-dimensional sparse data (better: Naive Bayes)
-- Need to model feature interactions explicitly
+**Key identity**: log(σ(z)) = -log(1 + e^(-z))
+
+**Also**: log(1-σ(z)) = log(e^(-z)/(1+e^(-z))) = -z - log(1+e^(-z))
+
+**Substitute**:
+```
+log L(w, b) = Σᵢ₌₁ⁿ [yᵢ·(-log(1+e^(-zᵢ))) + (1-yᵢ)·(-zᵢ - log(1+e^(-zᵢ)))]
+            = Σᵢ₌₁ⁿ [-yᵢ·log(1+e^(-zᵢ)) - (1-yᵢ)·zᵢ - (1-yᵢ)·log(1+e^(-zᵢ))]
+            = Σᵢ₌₁ⁿ [-(1-yᵢ)·zᵢ - log(1+e^(-zᵢ))]
+```
+
+**Further simplification**:
+```
+log L(w, b) = Σᵢ₌₁ⁿ [-(1-yᵢ)·zᵢ - log(1+e^(-zᵢ))]
+            = Σᵢ₌₁ⁿ [-zᵢ + yᵢ·zᵢ - log(1+e^(-zᵢ))]
+            = Σᵢ₌₁ⁿ [yᵢ·zᵢ - zᵢ - log(1+e^(-zᵢ))]
+```
+
+**Use identity**: z - log(1+e^(-z)) = log(1+e^z)
+
+**Final form**:
+```
+log L(w, b) = Σᵢ₌₁ⁿ [yᵢ·zᵢ - log(1+e^zᵢ)]
+```
+
+Where zᵢ = w·xᵢ + b
+
+#### **Step 6: Convert to Loss Function (Negative Log-Likelihood)**
+
+**Maximize likelihood = Minimize negative log-likelihood**
+
+```
+Loss(w, b) = -log L(w, b) = -Σᵢ₌₁ⁿ [yᵢ·zᵢ - log(1+e^zᵢ)]
+            = Σᵢ₌₁ⁿ [-yᵢ·zᵢ + log(1+e^zᵢ)]
+```
+
+**This is the log loss (cross-entropy loss)!**
+
+**Alternative common form**:
+```
+Loss(w, b) = Σᵢ₌₁ⁿ [-yᵢ·log(σ(zᵢ)) - (1-yᵢ)·log(1-σ(zᵢ))]
+```
+
+### 3.4 Complete Derivation: Gradient of Log Loss
+
+#### **Step 1: Loss Function**
+```
+L(w, b) = Σᵢ₌₁ⁿ [-yᵢ·log(σ(zᵢ)) - (1-yᵢ)·log(1-σ(zᵢ))]
+```
+
+Where zᵢ = w·xᵢ + b
+
+#### **Step 2: Derivative of Sigmoid**
+
+**Key result**: dσ/dz = σ(z)(1-σ(z))
+
+**Proof**:
+```
+σ(z) = 1/(1+e^(-z))
+dσ/dz = d/dz[(1+e^(-z))^(-1)]
+      = -1 × (1+e^(-z))^(-2) × (-e^(-z))
+      = e^(-z) / (1+e^(-z))²
+      = [e^(-z)/(1+e^(-z))] × [1/(1+e^(-z))]
+      = [1 - 1/(1+e^(-z))] × σ(z)
+      = (1-σ(z)) × σ(z)
+      = σ(z)(1-σ(z))
+```
+
+**Explanation**: 
+- Apply chain rule
+- Simplify using σ(z) = 1/(1+e^(-z))
+- Result: σ'(z) = σ(z)(1-σ(z))
+
+#### **Step 3: Gradient with Respect to w**
+
+```
+∂L/∂w = Σᵢ₌₁ⁿ ∂/∂w[-yᵢ·log(σ(zᵢ)) - (1-yᵢ)·log(1-σ(zᵢ))]
+```
+
+**Compute each term**:
+
+**Term 1**: ∂/∂w[-yᵢ·log(σ(zᵢ))]
+```
+= -yᵢ × (1/σ(zᵢ)) × (∂σ(zᵢ)/∂w)
+= -yᵢ × (1/σ(zᵢ)) × σ(zᵢ)(1-σ(zᵢ)) × (∂zᵢ/∂w)
+= -yᵢ × (1-σ(zᵢ)) × xᵢ
+```
+
+**Explanation**:
+- Chain rule: d/dw[log(σ)] = (1/σ) × (dσ/dw)
+- dσ/dw = σ'(z) × (dz/dw) = σ(1-σ) × xᵢ
+- Since zᵢ = w·xᵢ + b, ∂zᵢ/∂w = xᵢ
+
+**Term 2**: ∂/∂w[-(1-yᵢ)·log(1-σ(zᵢ))]
+```
+= -(1-yᵢ) × (1/(1-σ(zᵢ))) × (∂(1-σ(zᵢ))/∂w)
+= -(1-yᵢ) × (1/(1-σ(zᵢ))) × (-σ(zᵢ)(1-σ(zᵢ))) × xᵢ
+= (1-yᵢ) × σ(zᵢ) × xᵢ
+```
+
+**Explanation**:
+- Similar chain rule
+- d(1-σ)/dw = -dσ/dw = -σ(1-σ) × xᵢ
+- Negative signs cancel
+
+**Combine terms**:
+```
+∂L/∂w = Σᵢ₌₁ⁿ [-yᵢ(1-σ(zᵢ))xᵢ + (1-yᵢ)σ(zᵢ)xᵢ]
+      = Σᵢ₌₁ⁿ [σ(zᵢ)xᵢ - yᵢxᵢ]
+      = Σᵢ₌₁ⁿ (σ(zᵢ) - yᵢ)xᵢ
+```
+
+**Explanation**:
+- Expand: -yᵢ(1-σ) + (1-yᵢ)σ = -yᵢ + yᵢσ + σ - yᵢσ = σ - yᵢ
+- Final form: (prediction - actual) × feature
+
+#### **Step 4: Gradient with Respect to b**
+
+**Similar process**:
+```
+∂L/∂b = Σᵢ₌₁ⁿ (σ(zᵢ) - yᵢ)
+```
+
+**Explanation**: Same as w gradient, but xᵢ = 1 (since z = w·x + b, ∂z/∂b = 1)
+
+#### **Step 5: Update Rules**
+
+```
+w = w - η × Σᵢ₌₁ⁿ (σ(zᵢ) - yᵢ)xᵢ
+b = b - η × Σᵢ₌₁ⁿ (σ(zᵢ) - yᵢ)
+```
+
+**Interpretation**: Update proportional to prediction error (σ(zᵢ) - yᵢ)
 
 ---
 
@@ -363,236 +559,236 @@ Where η (eta) is the learning rate.
 
 ### 4.1 Intuition & Goal
 
-**Goal**: Find the best separating line/plane that maximizes the margin between classes.
+**Goal**: Find the best separating hyperplane with maximum margin.
 
-**Key Insight**: Not just any separating line, but the **best** one with maximum margin!
+### 4.2 Complete Derivation: Margin Calculation
 
-**Real-World Analogy**:
-- Imagine two groups of people on a field
-- You want to draw a line to separate them
-- The best line is the one with the widest "safety zone" (margin) on both sides
-- This makes the separation most robust to new data
+#### **Step 1: Hyperplane Equation**
 
-### 4.2 Core Concepts
+**Decision boundary**: w·x + b = 0
 
-#### **Support Vectors**
-- The data points closest to the decision boundary
-- These points "support" the margin
-- Only these points matter for the final model!
+**Explanation**:
+- w is normal vector (perpendicular to hyperplane)
+- b is offset from origin
+- Points on one side: w·x + b > 0
+- Points on other side: w·x + b < 0
 
-#### **Margin**
-- Distance between decision boundary and nearest points of each class
-- **Larger margin = better generalization**
-- More robust to new data
+#### **Step 2: Distance from Point to Hyperplane**
 
-#### **Maximum Margin Classifier**
-- Finds the hyperplane that maximizes this margin
-- Optimal separation with maximum confidence
+**Given point x₀, find distance to hyperplane w·x + b = 0**
 
-### 4.3 Mathematical Foundation
+**Step 2a: Find closest point on hyperplane**
 
-#### **Decision Boundary Equation**
+Let x' be closest point on hyperplane to x₀. Then:
+- x' = x₀ - t·w (move along normal direction)
+- w·x' + b = 0 (x' is on hyperplane)
+
+**Substitute**:
 ```
-w·x + b = 0
-```
-Where:
-- **w**: Weight vector (normal to the hyperplane, direction of line)
-- **b**: Bias term (offset)
-- **x**: Feature vector
-
-**Classification Rule**:
-- If w·x + b > 0 → Class +1
-- If w·x + b < 0 → Class -1
-- If w·x + b = 0 → On the boundary
-
-#### **Margin Calculation**
-
-**Distance from point to hyperplane**:
-```
-distance = |w·x + b| / ||w||
+w·(x₀ - t·w) + b = 0
+w·x₀ - t(w·w) + b = 0
+t = (w·x₀ + b) / ||w||²
 ```
 
-**Margin (distance between parallel hyperplanes)**:
+**Explanation**:
+- Move from x₀ toward hyperplane along normal w
+- Distance is t × ||w||
+- Solve for t using hyperplane equation
+
+**Step 2b: Calculate distance**
+
 ```
-margin = 2 / ||w||
+distance = ||x₀ - x'|| = ||t·w|| = |t| × ||w||
+         = |(w·x₀ + b)| / ||w||² × ||w||
+         = |w·x₀ + b| / ||w||
 ```
+
+**Explanation**:
+- Distance is magnitude of vector from x₀ to x'
+- Substitute t and simplify
+
+#### **Step 3: Margin Definition**
+
+**Margin**: Distance between two parallel hyperplanes that separate classes
+
+**Hyperplanes**:
+- w·x + b = +1 (positive class boundary)
+- w·x + b = -1 (negative class boundary)
+
+**Distance between them**:
+```
+margin = |(+1) - (-1)| / ||w|| = 2 / ||w||
+```
+
+**Explanation**:
+- Two parallel planes: ax + by + c₁ = 0 and ax + by + c₂ = 0
+- Distance = |c₁ - c₂| / √(a² + b²)
+- Here: |1 - (-1)| / ||w|| = 2/||w||
+
+### 4.3 Complete Derivation: Optimization Problem
+
+#### **Step 1: Constraints**
+
+**All points must be correctly classified and outside margin**:
+
+For positive class (yᵢ = +1):
+```
+w·xᵢ + b ≥ +1
+```
+
+For negative class (yᵢ = -1):
+```
+w·xᵢ + b ≤ -1
+```
+
+**Combine into single constraint**:
+```
+yᵢ(w·xᵢ + b) ≥ 1  for all i
+```
+
+**Explanation**:
+- If yᵢ = +1: w·xᵢ + b ≥ 1 ✓
+- If yᵢ = -1: Multiply by -1: -(w·xᵢ + b) ≥ 1, so w·xᵢ + b ≤ -1 ✓
+- Single constraint handles both cases
+
+#### **Step 2: Objective Function**
 
 **Goal**: Maximize margin = Minimize ||w||
 
-### 4.4 Optimization Problem
-
-#### **Formal Optimization**
-
-**Objective**: Maximize margin while correctly classifying all points
-
-**Constraints**:
-- All points must be on correct side
-- Margin must be maximized
-
-**Mathematical Formulation**:
+**Mathematical form**:
 ```
 Minimize: (1/2)||w||²
 Subject to: yᵢ(w·xᵢ + b) ≥ 1 for all i
 ```
 
-Where:
-- **yᵢ**: Class label (+1 or -1)
-- **Constraint**: Ensures all points are at least distance 1/||w|| from boundary
+**Why (1/2)||w||² instead of ||w||?**
+- Equivalent (minimizing ||w||² minimizes ||w||)
+- ||w||² = w·w is differentiable everywhere
+- 1/2 makes derivatives cleaner (no factor of 2)
 
-**Why (1/2)||w||²?**
-- Equivalent to minimizing ||w||
-- Squared form is mathematically convenient (differentiable)
-- 1/2 makes derivatives cleaner
+#### **Step 3: Lagrange Multipliers**
 
-#### **Lagrange Multipliers**
-
-**Why Needed**: 
-- Constrained optimization problem
-- Need to incorporate constraints into objective
+**Convert constrained to unconstrained optimization**
 
 **Lagrangian**:
 ```
-L(w, b, α) = (1/2)||w||² - Σαᵢ[yᵢ(w·xᵢ + b) - 1]
+L(w, b, α) = (1/2)||w||² - Σᵢ₌₁ⁿ αᵢ[yᵢ(w·xᵢ + b) - 1]
 ```
 
 Where:
-- **αᵢ**: Lagrange multipliers (one per training point)
-- **αᵢ > 0**: Only for support vectors!
-- **αᵢ = 0**: Point is not a support vector
+- αᵢ ≥ 0 are Lagrange multipliers
+- Each constraint gets one multiplier
 
-**Dual Form**:
-- Transform to maximize over α instead of minimize over w
-- More efficient, reveals support vectors naturally
+**Explanation**:
+- Original: minimize f(w) subject to gᵢ(w) ≥ 0
+- Lagrangian: L = f(w) - Σαᵢgᵢ(w)
+- At optimum, constraints are satisfied and gradients align
 
-### 4.5 Geometric Intuition
+#### **Step 4: Karush-Kuhn-Tucker (KKT) Conditions**
 
-#### **Convex Hulls**
-- **Definition**: Smallest convex set containing all points of a class
-- **Property**: Line segment between any two points in set is fully contained
-- **Key Insight**: Best separating line lies between convex hulls of the two classes
+**Condition 1: Stationarity** (gradients = 0)
 
-**Visualization**:
-- Draw boundary around each class (convex hull)
-- Find shortest line connecting the two hulls
-- Perpendicular bisector of this line = optimal decision boundary
-
-### 4.6 Soft Margin SVM (Handling Non-Separable Data)
-
-**Problem**: Real data is rarely perfectly separable
-
-**Solution**: Allow some misclassification with penalty
-
-**Modified Objective**:
+**With respect to w**:
 ```
-Minimize: (1/2)||w||² + C·Σξᵢ
-Subject to: yᵢ(w·xᵢ + b) ≥ 1 - ξᵢ, ξᵢ ≥ 0
+∂L/∂w = w - Σᵢ₌₁ⁿ αᵢyᵢxᵢ = 0
 ```
 
-Where:
-- **ξᵢ**: Slack variables (allow points to be on wrong side)
-- **C**: Regularization parameter
-  - Large C: Hard margin (penalize errors heavily)
-  - Small C: Soft margin (allow more errors)
-
-**C Parameter**:
-- **High C**: Narrow margin, fewer misclassifications
-- **Low C**: Wide margin, more misclassifications allowed
-- Controls bias-variance tradeoff
-
-### 4.7 Non-Linear SVM: The Kernel Trick
-
-#### **Problem**: Linear Separation Not Always Possible
-
-**Example**: 
-- Data points arranged in a circle
-- No straight line can separate inner from outer points
-
-#### **Solution**: Map to Higher Dimensions
-
-**Idea**: 
-- Transform data to higher-dimensional space
-- In higher dimensions, data becomes linearly separable
-- Then apply linear SVM in that space
-
-**Example**:
-- 2D circle → map to 3D using (x, y) → (x², y², √2xy)
-- In 3D, data becomes linearly separable!
-
-#### **The Kernel Trick**
-
-**Problem**: Explicit mapping is computationally expensive
-
-**Solution**: Kernel function computes dot products in high-dimensional space without explicit mapping!
-
-**Kernel Function**:
+**Therefore**:
 ```
-K(xᵢ, xⱼ) = φ(xᵢ)·φ(xⱼ)
+w = Σᵢ₌₁ⁿ αᵢyᵢxᵢ
 ```
 
-Where φ is the mapping function (we never compute it explicitly!)
+**Explanation**:
+- Gradient of (1/2)||w||² = w
+- Gradient of constraint terms = -Σαᵢyᵢxᵢ
+- Set sum to zero
 
-#### **Common Kernels**
-
-**1. Linear Kernel**:
+**With respect to b**:
 ```
-K(xᵢ, xⱼ) = xᵢ·xⱼ
+∂L/∂b = -Σᵢ₌₁ⁿ αᵢyᵢ = 0
 ```
-- No transformation, just dot product
-- Equivalent to linear SVM
 
-**2. Polynomial Kernel**:
+**Therefore**:
 ```
-K(xᵢ, xⱼ) = (xᵢ·xⱼ + c)^d
+Σᵢ₌₁ⁿ αᵢyᵢ = 0
 ```
-- Maps to polynomial features
-- d = degree, c = constant
 
-**3. RBF (Radial Basis Function) / Gaussian Kernel**:
+**Explanation**: Constraint on multipliers
+
+**Condition 2: Primal Feasibility**
 ```
-K(xᵢ, xⱼ) = exp(-γ||xᵢ - xⱼ||²)
+yᵢ(w·xᵢ + b) ≥ 1  for all i
 ```
-- Most popular for non-linear problems
-- γ (gamma) controls influence of each point
-- Very scalable for high-dimensional data
 
-**Why Kernels Work**:
-- Only need dot products, not explicit coordinates
-- Computationally efficient
-- Enables non-linear decision boundaries
+**Condition 3: Dual Feasibility**
+```
+αᵢ ≥ 0  for all i
+```
 
-### 4.8 Parameters Explained
+**Condition 4: Complementary Slackness**
+```
+αᵢ[yᵢ(w·xᵢ + b) - 1] = 0  for all i
+```
 
-**C (Regularization Parameter)**:
-- **Goal**: Balance margin width vs. classification accuracy
-- **Large C**: Hard margin, narrow, fewer errors
-- **Small C**: Soft margin, wide, more errors allowed
-- **Tuning**: Use cross-validation
+**Explanation**:
+- Either αᵢ = 0 (constraint not active)
+- Or yᵢ(w·xᵢ + b) = 1 (point is support vector)
 
-**γ (Gamma) for RBF Kernel**:
-- **Goal**: Control influence radius of each point
-- **Large γ**: Narrow influence, complex boundaries (risk of overfitting)
-- **Small γ**: Wide influence, smooth boundaries (risk of underfitting)
-- **Tuning**: Critical for RBF kernel performance
+#### **Step 5: Dual Formulation**
 
-**Kernel Choice**:
-- **Linear**: When data is linearly separable
-- **Polynomial**: When features have polynomial relationships
-- **RBF**: Default choice for non-linear problems
+**Substitute w back into Lagrangian**:
 
-### 4.9 When to Use SVM
+```
+L(w, b, α) = (1/2)||w||² - Σᵢ αᵢ[yᵢ(w·xᵢ + b) - 1]
+```
 
-**✅ Use When:**
-- Clear margin of separation exists
-- High-dimensional data (text, images)
-- Non-linear boundaries needed (with kernels)
-- Memory efficient (only stores support vectors)
-- Robust to outliers (with appropriate C)
+**Substitute w = Σⱼ αⱼyⱼxⱼ**:
+```
+= (1/2)(Σᵢ αᵢyᵢxᵢ)·(Σⱼ αⱼyⱼxⱼ) - Σᵢ αᵢ[yᵢ(Σⱼ αⱼyⱼxⱼ·xᵢ + b) - 1]
+```
 
-**❌ Don't Use When:**
-- Large datasets (slow training)
-- Noisy data with overlapping classes
-- Need probability estimates (SVM gives scores, not probabilities)
-- Need highly interpretable model
+**Expand first term**:
+```
+(1/2)ΣᵢΣⱼ αᵢαⱼyᵢyⱼ(xᵢ·xⱼ)
+```
+
+**Expand second term**:
+```
+- Σᵢ αᵢyᵢ(Σⱼ αⱼyⱼxⱼ·xᵢ) - bΣᵢ αᵢyᵢ + Σᵢ αᵢ
+```
+
+**Note**: Σᵢ αᵢyᵢ = 0 (from KKT condition)
+
+**Simplify**:
+```
+= (1/2)ΣᵢΣⱼ αᵢαⱼyᵢyⱼ(xᵢ·xⱼ) - ΣᵢΣⱼ αᵢαⱼyᵢyⱼ(xᵢ·xⱼ) + Σᵢ αᵢ
+= -(1/2)ΣᵢΣⱼ αᵢαⱼyᵢyⱼ(xᵢ·xⱼ) + Σᵢ αᵢ
+```
+
+**Dual problem** (maximize Lagrangian):
+```
+Maximize: Σᵢ αᵢ - (1/2)ΣᵢΣⱼ αᵢαⱼyᵢyⱼ(xᵢ·xⱼ)
+Subject to: Σᵢ αᵢyᵢ = 0, αᵢ ≥ 0
+```
+
+**Explanation**:
+- Dual is easier to solve (fewer constraints)
+- Only depends on dot products xᵢ·xⱼ (enables kernel trick!)
+- αᵢ > 0 only for support vectors
+
+#### **Step 6: Support Vectors**
+
+**From complementary slackness**: αᵢ > 0 only when yᵢ(w·xᵢ + b) = 1
+
+**These are the support vectors** - points on the margin boundaries
+
+**Prediction**:
+```
+f(x) = w·x + b = (Σᵢ αᵢyᵢxᵢ)·x + b
+     = Σᵢ αᵢyᵢ(xᵢ·x) + b
+```
+
+**Only need support vectors (αᵢ > 0) for prediction!**
 
 ---
 
@@ -600,226 +796,124 @@ K(xᵢ, xⱼ) = exp(-γ||xᵢ - xⱼ||²)
 
 ### 5.1 Intuition & Goal
 
-**Goal**: Predict class based on probability, using Bayes' theorem with a "naive" independence assumption.
+**Goal**: Predict class using Bayes' theorem with independence assumption.
 
-**Real-World Analogy**:
-- Doctor diagnosing a disease
-- Given symptoms (features), what's the probability of each disease (class)?
-- Uses prior knowledge (how common each disease is) + current evidence (symptoms)
+### 5.2 Complete Derivation: Bayes' Theorem
 
-**Key Insight**: Probabilistic classifier - outputs probabilities, not just labels!
+#### **Step 1: Conditional Probability Definition**
 
-### 5.2 Bayesian Foundation
+**Conditional probability**:
+```
+P(Y|X) = P(Y and X) / P(X)
+```
 
-#### **Bayes' Theorem**
+**Also**:
+```
+P(X|Y) = P(X and Y) / P(Y)
+```
+
+#### **Step 2: Joint Probability**
+
+**From conditional probability**:
+```
+P(Y and X) = P(Y|X) × P(X)
+P(X and Y) = P(X|Y) × P(Y)
+```
+
+**Since P(Y and X) = P(X and Y)**:
+```
+P(Y|X) × P(X) = P(X|Y) × P(Y)
+```
+
+#### **Step 3: Bayes' Theorem**
+
+**Solve for P(Y|X)**:
 ```
 P(Y|X) = P(X|Y) × P(Y) / P(X)
 ```
 
 **Components**:
-- **P(Y|X)**: Posterior probability (what we want - probability of class given features)
+- **P(Y|X)**: Posterior (what we want)
 - **P(X|Y)**: Likelihood (probability of features given class)
-- **P(Y)**: Prior probability (how common the class is)
-- **P(X)**: Evidence (probability of features - often ignored as constant)
+- **P(Y)**: Prior (how common the class is)
+- **P(X)**: Evidence (normalizing constant)
 
-**Proportional Form** (since P(X) is constant):
+#### **Step 4: Proportional Form**
+
+**For classification, P(X) is constant across classes**:
 ```
 P(Y|X) ∝ P(X|Y) × P(Y)
 ```
 
-**Interpretation**: 
-- Posterior ∝ Likelihood × Prior
-- Combine what we see (likelihood) with what we know (prior)
+**Explanation**: We only need relative probabilities to choose class
 
-### 5.3 The "Naive" Assumption
+### 5.3 Complete Derivation: Naive Independence Assumption
 
-#### **Independence Assumption**
+#### **Step 1: Multiple Features**
 
-**Naive Assumption**: All features are independent given the class
+**With p features**:
+```
+P(Y|X₁, X₂, ..., Xₚ) = P(X₁, X₂, ..., Xₚ|Y) × P(Y) / P(X₁, X₂, ..., Xₚ)
+```
+
+#### **Step 2: Independence Assumption**
+
+**Naive assumption**: Features independent given class
 ```
 P(X₁, X₂, ..., Xₚ|Y) = P(X₁|Y) × P(X₂|Y) × ... × P(Xₚ|Y)
+                      = Πᵢ₌₁ᵖ P(Xᵢ|Y)
 ```
 
-**Why "Naive"?**
-- Real-world features are often correlated
-- This assumption is rarely true!
-- But it works surprisingly well in practice
+**Explanation**: Joint probability = product of marginals (independence)
 
-**Mathematical Form**:
+#### **Step 3: Naive Bayes Formula**
+
+**Substitute into Bayes' theorem**:
 ```
-P(Y|X₁, X₂, ..., Xₚ) ∝ P(Y) × Πᵢ P(Xᵢ|Y)
-```
-
-Where Π means product (multiply all terms).
-
-### 5.4 How It Works: Step-by-Step
-
-#### **Step 1: Calculate Prior Probabilities**
-```
-P(Y = class_k) = (Number of examples with class_k) / (Total examples)
+P(Y|X₁, ..., Xₚ) ∝ P(Y) × Πᵢ₌₁ᵖ P(Xᵢ|Y)
 ```
 
-**Example**: 
-- 100 emails, 30 spam, 70 not spam
-- P(spam) = 30/100 = 0.3
-- P(not spam) = 70/100 = 0.7
-
-#### **Step 2: Calculate Likelihoods**
-
-**For Categorical Features**:
+**For classification**:
 ```
-P(Xᵢ = value|Y = class_k) = Count(Xᵢ = value AND Y = class_k) / Count(Y = class_k)
+Predicted Class = argmax_Y [P(Y) × Πᵢ₌₁ᵖ P(Xᵢ|Y)]
 ```
 
-**Example**:
-- Given spam emails, how many contain word "free"?
-- P("free"|spam) = 20/30 = 0.67
+### 5.4 Complete Derivation: Laplace Smoothing
 
-**For Continuous Features**:
-- Use Probability Density Function (PDF)
-- Often assume Gaussian (normal) distribution:
-```
-P(Xᵢ|Y) = (1/√(2πσ²)) × exp(-(xᵢ - μ)²/(2σ²))
-```
-- Estimate μ (mean) and σ (standard deviation) from training data
+#### **Step 1: Maximum Likelihood Estimate (Without Smoothing)**
 
-#### **Step 3: Calculate Posterior for Each Class**
+**For categorical feature Xᵢ with value v and class Y = k**:
 ```
-P(Y = class_k|X) ∝ P(Y = class_k) × Πᵢ P(Xᵢ|Y = class_k)
+P(Xᵢ = v|Y = k) = Count(Xᵢ = v AND Y = k) / Count(Y = k)
 ```
 
-#### **Step 4: Predict Class with Highest Probability**
+**Problem**: If Count = 0, then P = 0, making entire product zero
+
+#### **Step 2: Additive Smoothing**
+
+**Add small constant α to counts**:
 ```
-Predicted Class = argmax_k P(Y = class_k|X)
-```
-
-### 5.5 Laplace Smoothing (Additive Smoothing)
-
-#### **The Zero Probability Problem**
-
-**Problem**: 
-- If a feature value never appears with a class in training data
-- P(Xᵢ|Y) = 0
-- Then entire product becomes 0 (regardless of other features!)
-
-**Example**:
-- Word "viagra" never appears in non-spam emails
-- P("viagra"|not spam) = 0
-- Email with "viagra" → P(not spam|email) = 0 (even if all other words suggest not spam)
-
-#### **Solution: Laplace Smoothing**
-
-**Formula**:
-```
-P(Xᵢ = value|Y) = (Count + α) / (Total + α × |Values|)
+P(Xᵢ = v|Y = k) = (Count(Xᵢ = v AND Y = k) + α) / (Count(Y = k) + α × |V|)
 ```
 
 Where:
-- **α**: Smoothing parameter (typically α = 1)
-- **|Values|**: Number of possible values for feature
+- |V| = number of possible values for Xᵢ
+- α = smoothing parameter (typically α = 1)
 
-**Effect**:
+**Explanation**:
+- Add α to numerator (pseudo-counts)
+- Add α×|V| to denominator (normalize)
 - Prevents zero probabilities
-- Adds small probability mass to unseen combinations
-- More robust to new data
+- α = 1 is Laplace smoothing
 
-**Example**:
-- Without smoothing: P("viagra"|not spam) = 0/70 = 0
-- With smoothing (α=1): P("viagra"|not spam) = (0+1)/(70+1×2) = 1/72 ≈ 0.014
+#### **Step 3: Why This Works**
 
-### 5.6 Types of Naive Bayes
+**Intuition**: Assume we've seen each value α times before
 
-#### **1. Multinomial Naive Bayes**
-- For discrete counts (e.g., word counts in documents)
-- Uses multinomial distribution
-- Good for text classification
-
-#### **2. Gaussian Naive Bayes**
-- For continuous features
-- Assumes features follow Gaussian (normal) distribution
-- Estimates mean and variance for each feature-class combination
-
-#### **3. Bernoulli Naive Bayes**
-- For binary features (present/absent)
-- Uses Bernoulli distribution
-- Good for binary bag-of-words
-
-### 5.7 Generative vs. Discriminative Models
-
-#### **Naive Bayes is Generative**
-
-**Generative Models**:
-- Model the joint distribution P(X, Y)
-- Can generate new data samples
-- Learn: P(X|Y) and P(Y)
-- Example: Naive Bayes, Bayesian Networks
-
-**Discriminative Models**:
-- Model conditional distribution P(Y|X) directly
-- Focus on decision boundary
-- More efficient, often higher accuracy
-- Example: Logistic Regression, SVM
-
-**Comparison**:
-- **Generative**: More assumptions, can generate data, often slower
-- **Discriminative**: Fewer assumptions, can't generate, often faster and more accurate
-
-**Both solve P(Y|X)**, but with different approaches!
-
-### 5.8 Impact of Feature Correlation
-
-#### **When Features Are Correlated**
-
-**Problem**: 
-- Naive assumption (independence) is violated
-- Model makes incorrect probability estimates
-- Introduces bias in predictions
-
-**Example**:
-- Features: "rain" and "umbrella"
-- Highly correlated (when it rains, people use umbrellas)
-- Naive Bayes treats them as independent
-- Double-counts the evidence
-- Reduces accuracy
-
-**Why It Still Works**:
-- Often doesn't need exact probabilities
-- Only needs correct ranking of classes
-- Independence assumption is "good enough" for classification
-- But ignores optimal Bayes rate
-
-### 5.9 Parameters Explained
-
-**Prior Probabilities P(Y)**:
-- Estimated from training data
-- Can use domain knowledge if available
-- Affects predictions when likelihoods are similar
-
-**Likelihoods P(X|Y)**:
-- For each feature-class combination
-- Categorical: Count-based estimates
-- Continuous: Mean and variance estimates
-
-**Smoothing Parameter α**:
-- Prevents zero probabilities
-- Typically α = 1 (Laplace smoothing)
-- Larger α: More smoothing, more uniform probabilities
-
-### 5.10 When to Use Naive Bayes
-
-**✅ Use When:**
-- Text classification (emails, documents)
-- High-dimensional data with many features
-- Features are approximately independent
-- Need fast training and prediction
-- Want probability estimates
-- Small training datasets
-
-**❌ Don't Use When:**
-- Features are highly correlated
-- Need highest possible accuracy
-- Continuous features with complex distributions
-- Need to model feature interactions
+**Bayesian interpretation**: 
+- Prior: uniform distribution over values
+- Posterior: combine prior (α counts) with data
+- As data increases, prior influence decreases
 
 ---
 
@@ -827,265 +921,80 @@ Where:
 
 ### 6.1 Intuition & Goal
 
-**Goal**: Classify or predict based on similarity to nearest training examples.
+**Goal**: Predict based on similarity to nearest training examples.
 
-**Key Insight**: "A person is known by the company they keep"
+### 6.2 Complete Derivation: Distance Metrics
 
-**Real-World Analogy**:
-- You're moving to a new neighborhood
-- You ask your K nearest neighbors about the area
-- You make decisions based on what they tell you
-- The more neighbors agree, the more confident you are
+#### **Euclidean Distance (L2)**
 
-### 6.2 Core Concepts
-
-#### **Instance-Based Learning (Lazy Learning)**
-
-**Eager Learning** (most algorithms):
-- Build model during training
-- Store compact representation
-- Fast prediction
-
-**Lazy Learning** (KNN):
-- Do nothing during training (just store data)
-- Wait until test time
-- Compute similarity to all training examples
-- No abstraction or model creation
-
-**Trade-off**:
-- Training: Very fast (just store data)
-- Prediction: Slower (must compute distances to all points)
-
-#### **Memory-Based Learning**
-- Stores all training examples in memory
-- No generalization/abstraction
-- Prediction based on raw stored instances
-
-### 6.3 How It Works: Step-by-Step
-
-#### **Training Phase** (Lean Phase)
-1. Store all training examples (feature vectors and labels)
-2. That's it! No model building.
-
-#### **Prediction Phase**
-
-**For Classification**:
-1. Given new point x
-2. Find K nearest neighbors in training data
-3. Count votes: How many neighbors belong to each class?
-4. Predict: Majority class among K neighbors
-
-**For Regression**:
-1. Given new point x
-2. Find K nearest neighbors
-3. Predict: Average of neighbors' target values
-
-### 6.4 Distance Metrics
-
-#### **Why Distance Matters**
-- Determines which points are "neighbors"
-- Different metrics = different neighbors = different predictions
-- **Critical**: Features must be normalized!
-
-#### **Common Distance Metrics**
-
-**1. Euclidean Distance** (L2 norm):
+**Definition**:
 ```
-d(u, v) = √(Σ(uᵢ - vᵢ)²)
-```
-- Straight-line distance
-- Most common choice
-- p = 2 in Minkowski family
-
-**2. Manhattan Distance** (L1 norm):
-```
-d(u, v) = Σ|uᵢ - vᵢ|
-```
-- Sum of absolute differences
-- Like city blocks (can't cut diagonally)
-- p = 1 in Minkowski family
-- More robust to outliers
-
-**3. Minkowski Distance** (General form):
-```
-d(u, v) = (Σ|uᵢ - vᵢ|ᵖ)^(1/p)
-```
-- Generalizes Euclidean (p=2) and Manhattan (p=1)
-- p → ∞: Chebyshev distance (max difference)
-
-**4. Cosine Similarity**:
-```
-similarity = (u·v) / (||u|| × ||v||)
-```
-- Measures angle between vectors
-- Good for high-dimensional sparse data
-- Range: [-1, 1] (1 = identical direction)
-
-**5. Dot Product**:
-```
-u·v = Σuᵢ × vᵢ
-```
-- Measures alignment
-- Not a true distance (no triangle inequality)
-- But useful for similarity
-
-#### **Feature Normalization: CRITICAL!**
-
-**Problem**: 
-- Features on different scales
-- Example: Age (0-100) vs. Income (0-1,000,000)
-- Income dominates distance calculation!
-
-**Solution**: Normalize features
-- **Min-Max Scaling**: Scale to [0, 1]
-- **Z-score Normalization**: (x - μ) / σ
-- All features contribute equally to distance
-
-### 6.5 Choosing K: The Critical Hyperparameter
-
-#### **Small K (e.g., K=1)**
-
-**Characteristics**:
-- Very local decision boundary
-- Highly sensitive to individual points
-
-**Problems**:
-- **Overfitting**: Memorizes training data
-- Sensitive to noise and outliers
-- Complex decision boundary (Voronoi diagram for K=1)
-- Poor generalization
-
-**Voronoi Diagram** (K=1):
-- Each training point gets its own region
-- All points in region classified as that point's class
-- Very jagged boundaries
-
-#### **Large K (e.g., K=100)**
-
-**Characteristics**:
-- Smooth decision boundary
-- Less sensitive to individual points
-
-**Problems**:
-- **Underfitting**: Too simple
-- May miss local patterns
-- Hard to classify near boundaries
-- Includes points from other classes
-
-#### **Optimal K**
-
-**How to Choose**:
-- Use cross-validation!
-- Try different K values
-- Choose K with best validation performance
-- Often odd numbers (K=3, 5, 7) to avoid ties
-
-**Guidelines**:
-- **Small datasets**: Smaller K (3-5)
-- **Large datasets**: Larger K (10-20)
-- **Noisy data**: Larger K (smooths out noise)
-- **Clear boundaries**: Smaller K (captures local structure)
-
-**Example**: K=4 often good balance (avoids overfitting of K=1, but not too smooth)
-
-### 6.6 Weighted KNN
-
-#### **Intuition**
-- Closer neighbors should have more influence
-- Far neighbors should have less influence
-
-#### **Weighted Prediction**
-
-**For Classification**:
-```
-y = sign(Σᵢ₌₁ᵏ wᵢ × yᵢ)
-```
-Where weights wᵢ = 1 / distanceᵢ
-
-**For Regression**:
-```
-y = (Σᵢ₌₁ᵏ wᵢ × yᵢ) / (Σᵢ₌₁ᵏ wᵢ)
+d(u, v) = √[Σᵢ₌₁ⁿ (uᵢ - vᵢ)²]
 ```
 
-**Weight Function**:
-- **Inverse Distance**: w = 1/d
-- **Inverse Squared Distance**: w = 1/d² (stronger emphasis on close points)
-- **Exponential**: w = exp(-d) (very strong emphasis)
+**Derivation from Pythagorean theorem**:
+- In 2D: d = √[(u₁-v₁)² + (u₂-v₂)²]
+- Generalize to n dimensions
+- Measures straight-line distance
 
-**Benefits**:
-- More emphasis on closer neighbors
-- Better predictions, especially when K is large
-- Reduces impact of distant neighbors
+#### **Manhattan Distance (L1)**
 
-### 6.7 Mathematical Formulation
-
-#### **Classification**
+**Definition**:
 ```
-yₜ = sign(Σᵢ₌₁ᵏ yᵢ)
+d(u, v) = Σᵢ₌₁ⁿ |uᵢ - vᵢ|
 ```
-- Sum votes from K neighbors
-- Sign function: +1 if sum > 0, -1 if sum < 0
-- For weighted: multiply each vote by weight
 
-#### **Regression**
+**Derivation**: Sum of absolute differences along each dimension
+
+**Geometric interpretation**: Like city blocks (can't cut diagonally)
+
+#### **Minkowski Distance (General)**
+
+**Definition**:
 ```
-y = (1/k) × Σᵢ₌₁ᵏ yᵢ
+d(u, v) = [Σᵢ₌₁ⁿ |uᵢ - vᵢ|ᵖ]^(1/p)
 ```
-- Simple average of K neighbors' values
-- For weighted: weighted average
 
-### 6.8 Pros and Cons
+**Special cases**:
+- p = 1: Manhattan
+- p = 2: Euclidean
+- p → ∞: Chebyshev (max |uᵢ - vᵢ|)
 
-#### **Advantages**:
-- ✅ Simple, easy to understand
-- ✅ Few hyperparameters (mainly K)
-- ✅ Works for non-linear data
-- ✅ No assumptions about data distribution
-- ✅ Naturally handles multi-class problems
-- ✅ Can be used for both classification and regression
+### 6.3 Complete Derivation: Weighted KNN
 
-#### **Disadvantages**:
-- ❌ Slow for large datasets (must compute distances to all points)
-- ❌ Affected by curse of dimensionality
-- ❌ Requires feature normalization
-- ❌ Large memory usage (stores all training data)
-- ❌ Sensitive to irrelevant features
-- ❌ No model to interpret
+#### **Step 1: Inverse Distance Weighting**
 
-### 6.9 Curse of Dimensionality
+**Weight for neighbor i**:
+```
+wᵢ = 1 / dᵢ
+```
 
-**Problem**: 
-- In high dimensions, all points become approximately equidistant
-- Distance becomes less meaningful
-- KNN performance degrades
+Where dᵢ is distance to neighbor i
 
-**Why**:
-- As dimensions increase, volume grows exponentially
-- Data becomes sparse
-- Nearest neighbors aren't really "near" anymore
+**Explanation**: Closer neighbors get higher weights
 
-**Solutions**:
-- Feature selection
-- Dimensionality reduction (PCA)
-- Use weighted KNN
-- Consider other algorithms for high-dimensional data
+#### **Step 2: Weighted Prediction (Regression)**
 
-### 6.10 When to Use KNN
+**Weighted average**:
+```
+ŷ = (Σᵢ₌₁ᵏ wᵢ × yᵢ) / (Σᵢ₌₁ᵏ wᵢ)
+```
 
-**✅ Use When:**
-- Small to medium datasets
-- Non-linear relationships
-- Local patterns are important
-- Need simple, interpretable approach
-- Data is not too high-dimensional
-- Can afford slower predictions
+**Explanation**:
+- Numerator: Sum of weighted values
+- Denominator: Sum of weights (normalization)
+- Ensures prediction is in valid range
 
-**❌ Don't Use When:**
-- Very large datasets (too slow)
-- High-dimensional data (curse of dimensionality)
-- Need fast predictions
-- Need interpretable model parameters
-- Memory is limited
+#### **Step 3: Weighted Prediction (Classification)**
+
+**Weighted voting**:
+```
+ŷ = argmax_c [Σᵢ₌₁ᵏ wᵢ × I(yᵢ = c)]
+```
+
+Where I(yᵢ = c) = 1 if neighbor i has class c, else 0
+
+**Explanation**: Sum weights for each class, choose class with highest sum
 
 ---
 
@@ -1093,687 +1002,251 @@ y = (1/k) × Σᵢ₌₁ᵏ yᵢ
 
 ### 7.1 Intuition & Goal
 
-**Goal**: Make decisions by asking a series of yes/no questions, creating a tree-like structure.
+**Goal**: Make decisions through sequential questions.
 
-**Real-World Analogy**:
-- Medical diagnosis flowchart
-- "Does patient have fever?" → Yes → "Is temperature > 102°F?" → No → "Likely cold"
-- Each question narrows down possibilities
-- Final decision at leaf nodes
+### 7.2 Complete Derivation: Entropy
 
-**Key Insight**: Sequential decision making - consider one factor after another
+#### **Step 1: Information Content**
 
-### 7.2 Tree Structure
-
-#### **Components**
-
-**Root Node**: 
-- Top of tree
-- First question/decision
-
-**Internal Nodes**: 
-- Test attributes/features
-- Ask questions about features
-- Branch based on answers
-
-**Branches**: 
-- Outcomes of tests
-- Connect nodes
-- Represent attribute values
-
-**Leaf Nodes**: 
-- Final classifications/predictions
-- No further questions
-- Assign class label or value
-
-#### **Example Structure**
+**Shannon's information content**:
 ```
-                    [Root: Age < 30?]
-                   /                  \
-            Yes /                        \ No
-              /                            \
-    [Income > 50K?]                  [Has Credit?]
-    /            \                   /            \
-Yes/              \No            Yes/              \No
-/                  \              /                  \
-[Class A]      [Class B]    [Class A]          [Class C]
+I(event) = -log₂(P(event))
 ```
 
-### 7.3 How Decision Trees Learn
+**Explanation**:
+- Rare events (low P) → high information
+- Common events (high P) → low information
+- Base 2 gives bits
 
-#### **The Learning Process**
+#### **Step 2: Expected Information (Entropy)**
 
-1. **Start with all training data at root**
-2. **Choose best feature to split on**
-   - Measure how well each feature separates classes
-   - Pick feature that gives best separation
-3. **Split data based on feature**
-   - Create child nodes for each feature value
-   - Partition training examples
-4. **Repeat recursively**
-   - For each child node, repeat process
-   - Stop when:
-     - All examples in node have same class (pure)
-     - No more features to split on
-     - Reached maximum depth
-     - Too few examples to split
-
-#### **Key Question**: How to choose the "best" feature?
-
-### 7.4 Entropy: Measuring Uncertainty
-
-#### **Intuition**
-- **Entropy**: Measure of uncertainty or "surprise"
-- **High entropy**: High uncertainty, mixed classes (impure)
-- **Low entropy**: Low uncertainty, mostly one class (pure)
-- **Goal**: Reduce entropy with each split
-
-#### **Mathematical Definition**
+**For random variable Y with outcomes y₁, ..., yₖ**:
 ```
-H(S) = -Σᵢ (pᵢ × log₂(pᵢ))
+H(Y) = E[I(Y)] = Σᵢ₌₁ᵏ P(yᵢ) × I(yᵢ)
+                = -Σᵢ₌₁ᵏ P(yᵢ) × log₂(P(yᵢ))
 ```
 
-Where:
-- **S**: Set of examples
-- **pᵢ**: Proportion of class i in set
-- **log₂**: Base-2 logarithm (bits of information)
+**Explanation**:
+- Expected value of information content
+- Weighted average by probabilities
+- Measures uncertainty
 
-**Properties**:
-- **H = 0**: Pure set (all same class) - no uncertainty
-- **H = 1**: Maximum uncertainty (50/50 split for binary)
-- **H increases**: More classes, more balanced distribution
+#### **Step 3: Properties**
 
-**Example**:
-- Set with 8 examples: 6 Class A, 2 Class B
-- p_A = 6/8 = 0.75, p_B = 2/8 = 0.25
-- H = -(0.75×log₂(0.75) + 0.25×log₂(0.25))
-- H ≈ 0.81 (some uncertainty)
+**Maximum entropy** (uniform distribution):
+- P(yᵢ) = 1/k for all i
+- H(Y) = -k × (1/k) × log₂(1/k) = log₂(k)
 
-### 7.5 Information Gain: Choosing Best Split
+**Minimum entropy** (deterministic):
+- One outcome has P = 1, others P = 0
+- H(Y) = -1 × log₂(1) - 0 = 0
 
-#### **Intuition**
-- **Information Gain (IG)**: How much uncertainty we reduce by splitting
-- **Higher IG**: Better split (more uncertainty reduced)
-- Choose feature with maximum information gain
+### 7.3 Complete Derivation: Information Gain
 
-#### **Mathematical Definition**
+#### **Step 1: Conditional Entropy**
+
+**Entropy of Y given X**:
+```
+H(Y|X) = Σₓ P(x) × H(Y|X=x)
+```
+
+**Explanation**: Weighted average of entropies in each subset
+
+#### **Step 2: Information Gain**
+
+**Definition**:
 ```
 IG(Y|X) = H(Y) - H(Y|X)
 ```
 
+**Explanation**: Reduction in uncertainty after knowing X
+
+#### **Step 3: Detailed Calculation**
+
+**Given split on feature X creating subsets S₁, ..., Sₘ**:
+```
+H(Y|X) = Σⱼ₌₁ᵐ (|Sⱼ|/|S|) × H(Sⱼ)
+```
+
 Where:
-- **H(Y)**: Entropy before split
-- **H(Y|X)**: Weighted entropy after split
-- **IG**: Reduction in entropy
+- |Sⱼ| = size of subset j
+- |S| = total size
+- H(Sⱼ) = entropy of subset j
 
-#### **Weighted Entropy After Split**
+**Information gain**:
 ```
-H(Y|X) = Σᵢ (|Sᵢ|/|S|) × H(Sᵢ)
-```
-
-Where:
-- **Sᵢ**: Subset after splitting on feature X
-- **|Sᵢ|/|S|**: Proportion of examples in subset
-- Weight by size of each subset
-
-#### **Example Calculation**
-
-**Before Split**:
-- 10 examples: 5 Class A, 5 Class B
-- H(before) = 1.0 (maximum uncertainty)
-
-**Split on Feature "Age < 30"**:
-- Left (Age < 30): 6 examples, 5 Class A, 1 Class B
-  - H(left) = -(5/6×log₂(5/6) + 1/6×log₂(1/6)) ≈ 0.65
-- Right (Age ≥ 30): 4 examples, 0 Class A, 4 Class B
-  - H(right) = 0 (pure - all Class B)
-
-**After Split**:
-- H(after) = (6/10)×0.65 + (4/10)×0 = 0.39
-- IG = 1.0 - 0.39 = 0.61 (good split!)
-
-### 7.6 Gini Index: Alternative Impurity Measure
-
-#### **Definition**
-```
-Gini(D) = 1 - Σᵢ (pᵢ)²
+IG(Y|X) = H(S) - Σⱼ (|Sⱼ|/|S|) × H(Sⱼ)
 ```
 
-Where pᵢ is proportion of class i.
+**Explanation**: 
+- H(S): entropy before split
+- Second term: weighted entropy after split
+- Difference: information gained
 
-**Properties**:
-- **Gini = 0**: Pure (all same class)
-- **Gini = 0.5**: Maximum impurity (50/50 for binary)
-- **Smaller Gini = Purer split**
+### 7.4 Complete Derivation: Gini Index
 
-#### **Gini vs. Entropy**
-- Both measure impurity
-- Gini: Simpler to compute (no logarithm)
-- Entropy: Information-theoretic interpretation
-- Often similar results in practice
-- CART algorithm uses Gini
+#### **Step 1: Definition**
 
-### 7.7 Decision Tree Algorithms
+**Gini impurity**:
+```
+Gini(D) = 1 - Σᵢ₌₁ᵏ (pᵢ)²
+```
 
-#### **ID3 (Iterative Dichotomiser 3)**
-- Uses entropy and information gain
-- Works with categorical features only
-- Binary or multiway splits
-- **Limitation**: Can't handle continuous features
+Where pᵢ is proportion of class i
 
-#### **C4.5 (Successor to ID3)**
-- Handles both continuous and discrete features
-- Uses information gain ratio (normalized)
-- Includes pruning to prevent overfitting
-- More robust than ID3
+#### **Step 2: Derivation from Variance**
 
-#### **CART (Classification and Regression Trees)**
-- Supports both classification AND regression
-- Uses Gini index for classification
-- Uses variance reduction for regression
-- Binary splits only (simpler structure)
+**For binary classification** (Y ∈ {0, 1}):
+- Variance: Var(Y) = E[Y²] - (E[Y])²
+- E[Y] = p (proportion of class 1)
+- E[Y²] = p (since Y² = Y for binary)
+- Var(Y) = p - p² = p(1-p)
 
-### 7.8 Overfitting and Pruning
+**Gini = 2 × Var(Y) = 2p(1-p)**
 
-#### **The Overfitting Problem**
+**For k classes**:
+```
+Gini = Σᵢ pᵢ(1-pᵢ) = Σᵢ pᵢ - Σᵢ pᵢ² = 1 - Σᵢ pᵢ²
+```
 
-**Symptoms**:
-- Tree grows very deep
-- Many nodes with few examples
-- Perfect on training data, poor on test data
-- Memorizes noise in training data
+**Explanation**: Sum variances for each class
 
-**Why It Happens**:
-- Tree keeps splitting until pure nodes
-- No stopping criterion
-- Captures training-specific patterns
+#### **Step 3: Properties**
 
-#### **Solutions**
+**Maximum** (uniform): pᵢ = 1/k → Gini = 1 - k(1/k)² = 1 - 1/k
 
-**1. Pre-Pruning (Early Stopping)**:
-- Stop splitting when:
-  - Maximum depth reached
-  - Minimum samples per node
-  - Minimum information gain
-  - Maximum number of nodes
-
-**2. Post-Pruning**:
-- Grow full tree first
-- Then remove branches that don't help
-- Use validation set to decide what to prune
-- More effective than pre-pruning
-
-**3. Complexity Control**:
-- Limit tree depth
-- Require minimum samples to split
-- Require minimum samples in leaf
-
-### 7.9 Bias-Variance Tradeoff
-
-#### **Overfitting (Low Bias, High Variance)**
-- Model is too complex
-- Memorizes training data
-- High variance: Predictions change a lot with different training data
-- Low bias: Fits training data very well
-
-#### **Underfitting (High Bias, Low Variance)**
-- Model is too simple
-- Can't capture patterns
-- High bias: Systematic error
-- Low variance: Predictions stable but wrong
-
-#### **Sweet Spot**
-- Balance complexity
-- Good on both training and test data
-- Achieved through pruning and regularization
-
-### 7.10 Regression Trees
-
-#### **For Continuous Targets**
-
-**Splitting Criterion**:
-- Instead of entropy/Gini, use **variance reduction**
-- Choose split that minimizes variance in child nodes
-
-**Prediction**:
-- Leaf nodes predict average value of training examples
-- Instead of majority class
-
-**Example**:
-- Split reduces variance from 100 to 30 (good split!)
-- Leaf with examples: [25, 26, 24, 25] → predict 25
-
-### 7.11 Feature Importance
-
-#### **Interpretability**
-- Can see which features are used most
-- Features near root are more important
-- Easy to understand decision process
-
-#### **Feature Selection**
-- Tree automatically selects relevant features
-- Unused features don't appear in tree
-- Natural dimensionality reduction
-
-### 7.12 When to Use Decision Trees
-
-**✅ Use When:**
-- Need interpretable model
-- Non-linear relationships
-- Mixed data types (categorical + continuous)
-- Want to understand feature importance
-- Need fast predictions (once trained)
-- Want to handle missing values naturally
-
-**❌ Don't Use When:**
-- Need very high accuracy (use ensemble methods)
-- Data has many irrelevant features
-- Relationships are primarily linear
-- Need smooth predictions (trees are piecewise constant)
-- Small changes in data cause large tree changes (unstable)
+**Minimum** (pure): One pᵢ = 1, others 0 → Gini = 1 - 1 = 0
 
 ---
 
 ## 8. Evaluation Metrics
 
-### 8.1 Why Evaluation Matters
+### 8.1 Classification Metrics
 
-**Goal**: Measure how well your model performs
+#### **Precision Derivation**
 
-**Real-World Impact**:
-- 1% reduction in nurse hours = $2M savings/year
-- 0.1% reduction in patient stay = $10M savings/year
-- Every decimal percentage point matters!
-
-### 8.2 Classification Metrics
-
-#### **Confusion Matrix**
-
-**Structure**:
-```
-                Predicted
-              Positive  Negative
-Actual Positive   TP      FN
-       Negative   FP      TN
-```
-
-**Components**:
-- **TP (True Positive)**: Correctly predicted positive
-- **TN (True Negative)**: Correctly predicted negative
-- **FP (False Positive)**: Incorrectly predicted positive (Type I error)
-- **FN (False Negative)**: Incorrectly predicted negative (Type II error)
-
-#### **Accuracy**
-```
-Accuracy = (TP + TN) / (TP + TN + FP + FN)
-```
-- Overall correctness
-- **Problem**: Misleading with imbalanced classes
-- Example: 99% negative, predict all negative → 99% accuracy but useless!
-
-#### **Precision**
+**Definition**:
 ```
 Precision = TP / (TP + FP)
 ```
-- Of all positive predictions, how many are correct?
-- "When I say positive, how often am I right?"
-- Important when false positives are costly
 
-#### **Recall (Sensitivity)**
+**Explanation**: Of all positive predictions, how many are correct?
+
+**Derivation from conditional probability**:
+- P(Actually Positive | Predicted Positive)
+- = P(Positive and Predicted Positive) / P(Predicted Positive)
+- = TP / (TP + FP)
+
+#### **Recall Derivation**
+
+**Definition**:
 ```
 Recall = TP / (TP + FN)
 ```
-- Of all actual positives, how many did we catch?
-- "How many positives did I find?"
-- Important when false negatives are costly
 
-#### **F1-Score**
+**Explanation**: Of all actual positives, how many did we find?
+
+**Derivation**:
+- P(Predicted Positive | Actually Positive)
+- = TP / (TP + FN)
+
+#### **F1-Score Derivation**
+
+**Harmonic mean**:
 ```
 F1 = 2 × (Precision × Recall) / (Precision + Recall)
 ```
-- Harmonic mean of precision and recall
-- Balances both metrics
-- Good when you need both precision and recall
 
-#### **G-mean (Geometric Mean)**
+**Why harmonic mean?**
+- Arithmetic mean: (P+R)/2 (doesn't penalize imbalance)
+- Harmonic mean: 2PR/(P+R) (penalizes when one is low)
+- F1 = 0 if either P or R = 0
+
+**Alternative form**:
 ```
-G-mean = √(Precision × Recall)
+1/F1 = (1/P + 1/R) / 2
 ```
-- Geometric mean
-- Alternative balance metric
-- Useful for imbalanced datasets
 
-### 8.3 ROC Curve and AUC
-
-#### **ROC Curve (Receiver Operating Characteristic)**
-
-**X-axis**: False Positive Rate (FPR) = FP / (FP + TN)
-**Y-axis**: True Positive Rate (TPR) = Recall = TP / (TP + FN)
-
-**Interpretation**:
-- Plots TPR vs. FPR at different thresholds
-- Shows tradeoff between sensitivity and specificity
-- Upper-left corner is best (high TPR, low FPR)
-
-#### **AUC (Area Under ROC Curve)**
-- Measures classifier's ability to distinguish classes
-- **AUC = 1.0**: Perfect classifier
-- **AUC = 0.5**: Random guessing
-- **AUC > 0.7**: Generally good
-- Higher area = better model
-
-### 8.4 Regression Metrics
-
-#### **Mean Squared Error (MSE)**
-```
-MSE = (1/n) Σ(yᵢ - ŷᵢ)²
-```
-- Average squared difference
-- Penalizes large errors more
-- In same units as target squared
-
-#### **Root Mean Squared Error (RMSE)**
-```
-RMSE = √MSE
-```
-- Square root of MSE
-- In same units as target
-- More interpretable
-
-#### **Mean Absolute Error (MAE)**
-```
-MAE = (1/n) Σ|yᵢ - ŷᵢ|
-```
-- Average absolute difference
-- Less sensitive to outliers than MSE
-- More robust
-
-#### **R² (Coefficient of Determination)**
-```
-R² = 1 - (SS_res / SS_tot)
-```
-- Proportion of variance explained
-- **R² = 1**: Perfect fit
-- **R² = 0**: No better than mean
-- **R² < 0**: Worse than mean
-
-### 8.5 Cross-Validation
-
-#### **K-Fold Cross-Validation**
-
-**Process**:
-1. Split data into K folds
-2. For each fold:
-   - Use as validation set
-   - Train on other K-1 folds
-   - Evaluate on validation fold
-3. Average results across folds
-
-**Benefits**:
-- More reliable performance estimate
-- Reduces bias from single train/test split
-- Better use of limited data
-- Reduces variance in performance estimates
-
-**Common Choices**:
-- **K = 5**: Good balance
-- **K = 10**: More reliable, more computation
-- **K = n (Leave-One-Out)**: Maximum use of data, very slow
-
-### 8.6 Train/Validation/Test Split
-
-#### **Three-Way Split**
-
-**Training Set** (e.g., 60%):
-- Learn model parameters
-- Fit the model
-
-**Validation Set** (e.g., 20%):
-- Tune hyperparameters
-- Model selection
-- Early stopping decisions
-
-**Test Set** (e.g., 20%):
-- Final evaluation only
-- Never used during training
-- Unbiased estimate of generalization
-
-#### **Critical Rule: No Data Leakage!**
-- Test data must never influence training
-- Don't peek at test set
-- Don't use test set for hyperparameter tuning
+**Explanation**: Average of reciprocals
 
 ---
 
 ## 9. Optimization & Training
 
-### 9.1 The Optimization Problem
+### 9.1 Complete Derivation: Gradient Descent
 
-#### **Model-Based Supervised Learning Framework**
+#### **Step 1: Taylor Series Expansion**
 
-**Three Steps**:
-1. **Pick a model**: y = b + Σwⱼfⱼ(x)
-2. **Pick criteria (objective function)**: What to optimize?
-3. **Develop learning algorithm**: How to find optimal parameters?
-
-#### **Classification as Optimization**
-
-**Goal**: Minimize loss or maximize margin
-
-**Example Objective**:
+**Function f near point w₀**:
 ```
-Minimize: Σexp(-yᵢ(w·xᵢ + b))
-```
-- Exponential loss function
-- Penalizes misclassifications
-- Convex surrogate loss (easier to optimize)
-
-### 9.2 Gradient Descent: The Core Algorithm
-
-#### **Intuition: Blindfolded in a Valley**
-
-**Analogy**:
-- You're blindfolded in a convex valley
-- Want to reach the bottom (minimum)
-- Can only feel the ground near your feet
-- Move in direction of steepest descent
-- Repeat until you reach the bottom
-
-#### **What is a Gradient?**
-
-**Definition**: 
-- Vector of partial derivatives
-- Points in direction of steepest ascent
-- For minimization: Move opposite to gradient
-
-**2D Example**:
-- Gradient is the slope
-- Positive slope → move left (decrease)
-- Negative slope → move right (increase)
-
-#### **Mathematical Formulation**
-
-**Update Rule**:
-```
-wⱼ = wⱼ - η × (∂L/∂wⱼ)
+f(w) ≈ f(w₀) + f'(w₀)(w - w₀)
 ```
 
-Where:
-- **wⱼ**: Parameter to update
-- **η (eta)**: Learning rate (step size)
-- **∂L/∂wⱼ**: Partial derivative (gradient component)
-  - Slope of loss function with respect to wⱼ
+**For minimization**: Move in direction of negative gradient
 
-**Interpretation**:
-- If slope is positive → decrease weight
-- If slope is negative → increase weight
-- Learning rate controls step size
+#### **Step 2: Update Rule**
 
-#### **Convex Functions**
-
-**Property**: At most one minimum (global minimum)
-
-**Why Important**:
-- Gradient descent won't get stuck in local minima
-- Guaranteed to find global optimum
-- Many ML loss functions are convex (or approximately so)
-
-### 9.3 Types of Gradient Descent
-
-#### **Batch Gradient Descent**
-
-**Process**:
-- Compute gradient using ALL training examples
-- Update parameters once per epoch
-
-**Pros**:
-- Stable, smooth convergence
-- Deterministic
-
-**Cons**:
-- Slow for large datasets
-- Requires all data in memory
-
-#### **Stochastic Gradient Descent (SGD)**
-
-**Process**:
-- Compute gradient using ONE random example
-- Update parameters immediately
-
-**Pros**:
-- Fast updates
-- Can escape local minima (noise helps)
-- Memory efficient
-
-**Cons**:
-- Noisy updates (high variance)
-- May not converge smoothly
-
-#### **Mini-Batch Gradient Descent**
-
-**Process**:
-- Compute gradient using small batch (e.g., 32 examples)
-- Update parameters per batch
-
-**Pros**:
-- Balances efficiency and stability
-- Most common in practice
-- Can parallelize
-
-**Cons**:
-- Need to tune batch size
-
-### 9.4 Learning Rate
-
-#### **Critical Hyperparameter**
-
-**Too Large**:
-- Overshoots minimum
-- May diverge
-- Loss increases
-
-**Too Small**:
-- Very slow convergence
-- May get stuck
-- Takes many iterations
-
-**Just Right**:
-- Smooth convergence
-- Reaches minimum efficiently
-
-#### **Adaptive Learning Rates**
-- Start large, decrease over time
-- Methods: AdaGrad, Adam, RMSprop
-- Automatically adjust step size
-
-### 9.5 Regularization: Preventing Overfitting
-
-#### **The Overfitting Problem**
-
-**Definition**: Model fits training data too well, fails to generalize
-
-**Indicators**:
-- Very low training error
-- High error on new instances
-- Model memorizes noise
-
-#### **Regularization: Adding Constraints**
-
-**Goal**: Penalize large weights to prevent overfitting
-
-**Mechanism**:
-- Add penalty term to loss function
-- Constrain model complexity
-- Smooth out the model
-- Called "shrinkage" in statistics
-
-#### **L1 Regularization (Lasso)**
-
-**Penalty**: λ × Σ|wⱼ|
-
-**Effect**:
-- Promotes sparsity
-- Some weights become exactly 0
-- Automatic feature selection
-- Useful when many features are irrelevant
-
-**Loss Function**:
+**From Taylor expansion**:
 ```
-L = Original Loss + λ × Σ|wⱼ|
+f(w₀ - η∇f) ≈ f(w₀) - η||∇f||²
 ```
+
+**Explanation**: 
+- Moving in -∇f direction decreases function value
+- η controls step size
+- ||∇f||² is always positive
+
+**Update**:
+```
+w = w - η × ∇f(w)
+```
+
+#### **Step 3: Learning Rate**
+
+**Too large**: May overshoot minimum
+**Too small**: Slow convergence
+
+**Optimal**: Largest η that still decreases loss
+
+### 9.2 Complete Derivation: Regularization
 
 #### **L2 Regularization (Ridge)**
 
-**Penalty**: λ × Σwⱼ²
-
-**Effect**:
-- Shrinks weights toward zero
-- Keeps all weights nonzero
-- Smooths the model
-- Prevents extreme weights
-
-**Loss Function**:
+**Modified loss**:
 ```
-L = Original Loss + λ × Σwⱼ²
+L(w) = Original Loss + λ × ||w||²
 ```
 
-#### **Elastic Net**
-
-**Combination**: L1 + L2
+**Gradient**:
 ```
-L = Original Loss + λ₁ × Σ|wⱼ| + λ₂ × Σwⱼ²
+∇L = ∇(Original Loss) + 2λw
 ```
 
-**Benefits**:
-- Combines advantages of both
-- Feature selection (L1) + smoothness (L2)
+**Update**:
+```
+w = w - η[∇(Original Loss) + 2λw]
+  = (1 - 2ηλ)w - η∇(Original Loss)
+```
 
-#### **Regularization Parameter λ**
+**Explanation**: 
+- Shrinks weights by factor (1-2ηλ) each step
+- Prevents weights from growing too large
 
-**Large λ**: 
-- Strong regularization
-- Simpler model
-- Risk of underfitting
+#### **L1 Regularization (Lasso)**
 
-**Small λ**:
-- Weak regularization
-- Complex model
-- Risk of overfitting
+**Modified loss**:
+```
+L(w) = Original Loss + λ × Σ|wᵢ|
+```
 
-**Tuning**: Use validation set to find optimal λ
+**Subgradient** (since |w| not differentiable at 0):
+```
+∂L/∂wᵢ = ∂(Original Loss)/∂wᵢ + λ × sign(wᵢ)
+```
 
-### 9.6 Early Stopping
+Where sign(w) = +1 if w > 0, -1 if w < 0, 0 if w = 0
 
-#### **Technique**
-- Monitor validation loss during training
-- Stop when validation loss stops improving
-- Prevents overfitting
-- Simple but effective
-
-#### **Why It Works**
-- Training loss keeps decreasing
-- But validation loss may start increasing
-- Stop at optimal point (best generalization)
+**Effect**: Can drive weights exactly to zero (sparsity)
 
 ---
 
@@ -1781,231 +1254,61 @@ L = Original Loss + λ₁ × Σ|wⱼ| + λ₂ × Σwⱼ²
 
 ### 10.1 Bias-Variance Decomposition
 
-#### **Components of Prediction Error**
+#### **Complete Derivation**
 
-**Total Error = Bias² + Variance + Irreducible Error**
+**Expected prediction error**:
+```
+E[(Y - Ŷ)²] = E[(Y - E[Ŷ] + E[Ŷ] - Ŷ)²]
+```
 
-**Bias**:
-- Result of simplifying assumptions
-- Parametric methods → high bias
-- Systematic error from model limitations
+**Expand**:
+```
+= E[(Y - E[Ŷ])²] + E[(E[Ŷ] - Ŷ)²] + 2E[(Y - E[Ŷ])(E[Ŷ] - Ŷ)]
+```
 
-**Variance**:
-- Amount estimate changes with different training data
-- Non-parametric methods → high variance
-- Sensitivity to training data
+**Third term is zero** (Y and Ŷ independent):
+```
+= E[(Y - E[Ŷ])²] + E[(E[Ŷ] - Ŷ)²]
+= Var(Y) + Var(Ŷ)
+```
 
-**Irreducible Error**:
-- Cannot be reduced regardless of algorithm
-- Inherent noise in data
+**Add and subtract E[Y]**:
+```
+= E[(Y - E[Y] + E[Y] - E[Ŷ])²] + Var(Ŷ)
+= Var(Y) + (E[Y] - E[Ŷ])² + Var(Ŷ)
+```
 
-#### **Tradeoff**
-- **High Bias, Low Variance**: Underfitting (too simple)
-- **Low Bias, High Variance**: Overfitting (too complex)
-- **Goal**: Find sweet spot
+**Final form**:
+```
+Error = Bias² + Variance + Irreducible Error
+```
 
-### 10.2 Model Selection Principles
-
-#### **Occam's Razor**
-- Simplest explanation/model is usually best
-- Prefer simpler models when performance is similar
-- Reduces overfitting risk
-
-#### **No Free Lunch Theorem**
-- No single algorithm works best for all problems
-- Model choice depends on data characteristics
-- Must try different approaches
-
-### 10.3 Feature Engineering
-
-#### **Importance**
-- Often more important than algorithm choice
-- Domain knowledge is crucial
-- Can make or break model performance
-
-#### **Common Techniques**
-- **Normalization**: Scale features (critical for distance-based methods)
-- **Encoding**: Convert categorical to numerical
-- **Polynomial Features**: Capture interactions
-- **Feature Selection**: Remove irrelevant features
-- **Dimensionality Reduction**: PCA, etc.
-
-### 10.4 Handling Imbalanced Data
-
-#### **Problem**
-- One class much more common than others
-- Model biased toward majority class
-- Accuracy misleading
-
-#### **Solutions**
-- **Resampling**: Oversample minority, undersample majority
-- **Class Weights**: Penalize misclassifying minority more
-- **Different Metrics**: Use precision, recall, F1 instead of accuracy
-- **Threshold Tuning**: Adjust decision threshold
-
-### 10.5 Practical Workflow
-
-#### **Step-by-Step Process**
-
-1. **Understand Problem & Data**
-   - What are you predicting?
-   - What data is available?
-   - What are the constraints?
-
-2. **Exploratory Data Analysis**
-   - Visualize data
-   - Check for missing values
-   - Understand distributions
-   - Identify outliers
-
-3. **Data Preprocessing**
-   - Handle missing values
-   - Encode categorical variables
-   - Normalize features
-   - Split data (train/val/test)
-
-4. **Model Selection**
-   - Start with simple baseline
-   - Try multiple algorithms
-   - Consider problem characteristics
-
-5. **Training**
-   - Train on training set
-   - Monitor training and validation metrics
-   - Use early stopping if needed
-
-6. **Hyperparameter Tuning**
-   - Use validation set
-   - Grid search or random search
-   - Cross-validation for reliability
-
-7. **Evaluation**
-   - Final evaluation on test set
-   - Use appropriate metrics
-   - Check for overfitting
-
-8. **Deployment & Monitoring**
-   - Deploy model
-   - Monitor performance
-   - Retrain as needed
-
-### 10.6 Common Pitfalls
-
-#### **Data Leakage**
-- Test data influencing training
-- Using future information to predict past
-- **Solution**: Strict train/test separation
-
-#### **Overfitting**
-- Model memorizes training data
-- **Solution**: Regularization, more data, simpler model
-
-#### **Underfitting**
-- Model too simple
-- **Solution**: More features, more complex model, more training
-
-#### **Ignoring Domain Knowledge**
-- Wrong model for problem
-- **Solution**: Understand the domain, choose appropriate model
-
-#### **Wrong Evaluation Metric**
-- Accuracy on imbalanced data
-- **Solution**: Use appropriate metrics (precision, recall, F1)
-
-### 10.7 Best Practices
-
-#### **Data**
-- ✅ More data usually helps
-- ✅ Quality over quantity
-- ✅ Representative of real-world distribution
-- ✅ Proper train/val/test splits
-
-#### **Models**
-- ✅ Start simple, add complexity gradually
-- ✅ Use cross-validation
-- ✅ Regularize to prevent overfitting
-- ✅ Interpret results
-
-#### **Evaluation**
-- ✅ Use appropriate metrics
-- ✅ Evaluate on held-out test set
-- ✅ Check for overfitting
-- ✅ Consider real-world constraints
-
-#### **Ethics & Sustainability**
-- ✅ Consider bias and fairness
-- ✅ Ensure model represents all groups
-- ✅ Think about environmental impact
-- ✅ Consider societal implications
+Where:
+- **Bias²** = (E[Y] - E[Ŷ])² (systematic error)
+- **Variance** = Var(Ŷ) (sensitivity to data)
+- **Irreducible Error** = Var(Y) (inherent noise)
 
 ---
 
-## Summary: Key Takeaways
+## Summary: Key Mathematical Derivations
 
-### Supervised Learning Essentials
+### Essential Formulas with Complete Derivations
 
-1. **Two Main Tasks**:
-   - Classification: Categorical predictions
-   - Regression: Continuous predictions
-
-2. **Core Algorithms**:
-   - **Linear Regression**: Simple, interpretable, for linear relationships
-   - **Logistic Regression**: Probabilistic classification
-   - **SVM**: Maximum margin, good for high dimensions
-   - **Naive Bayes**: Fast, good for text, probabilistic
-   - **KNN**: Simple, instance-based, non-parametric
-   - **Decision Trees**: Interpretable, handles non-linear, feature selection
-
-3. **Key Concepts**:
-   - Loss functions measure prediction error
-   - Gradient descent optimizes parameters
-   - Regularization prevents overfitting
-   - Cross-validation ensures reliable evaluation
-
-4. **Evaluation**:
-   - Use appropriate metrics
-   - Avoid data leakage
-   - Consider bias-variance tradeoff
-   - Test on unseen data
-
-5. **Best Practices**:
-   - Understand your data
-   - Start simple
-   - Use domain knowledge
-   - Regularize appropriately
-   - Evaluate properly
+1. **Linear Regression Closed Form**: Derived from setting gradients to zero
+2. **Logistic Regression Sigmoid**: Derived from log-odds transformation
+3. **Log Loss**: Derived from maximum likelihood estimation
+4. **SVM Margin**: Derived from distance formula to hyperplane
+5. **SVM Dual Form**: Derived using Lagrange multipliers and KKT conditions
+6. **Bayes' Theorem**: Derived from conditional probability definitions
+7. **Naive Bayes**: Derived from independence assumption
+8. **Entropy**: Derived from information theory (Shannon)
+9. **Information Gain**: Derived from conditional entropy
+10. **Gradient Descent**: Derived from Taylor series expansion
+11. **Regularization**: Derived from constrained optimization
 
 ---
 
-## Practice Problems & Exercises
+**End of Complete Mathematical Derivation Guide**
 
-### Conceptual Questions
-
-1. **When would you use linear regression vs. logistic regression?**
-2. **Why is the "naive" assumption in Naive Bayes often violated, yet it still works?**
-3. **How does the choice of K affect KNN performance?**
-4. **What is the relationship between margin and generalization in SVM?**
-5. **How does entropy help decision trees choose splits?**
-
-### Mathematical Exercises
-
-1. **Calculate information gain** for a given split
-2. **Derive the gradient** for logistic regression loss
-3. **Compute distance metrics** between feature vectors
-4. **Calculate precision, recall, F1** from confusion matrix
-5. **Apply Bayes' theorem** to classification problem
-
-### Practical Exercises
-
-1. **Implement linear regression** from scratch
-2. **Build a decision tree** using entropy
-3. **Tune K in KNN** using cross-validation
-4. **Compare SVM kernels** on a dataset
-5. **Evaluate models** using multiple metrics
-
----
-
-**End of Supervised Learning Guide**
-
-*This comprehensive guide covers all supervised learning topics from your course materials, providing intuitive explanations, mathematical foundations, and practical insights for each algorithm.*
+*Every mathematical step is explained with reasoning and intuition. This ensures deep understanding of why each transformation is made and how formulas are derived.*
 
